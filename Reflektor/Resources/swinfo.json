@@ -1,0 +1,23 @@
+{
+  "spec": "2.0",
+  "mod_id": "Reflektor",
+  "name": "Reflektor",
+  "author": "Coldrifting",
+  "description": "A quicker alternative than Unity Explorer for browsing GameObjects",
+  "source": "https://github.com/coldrifting/Reflektor",
+  "version": "0.1.0.0",
+  "ksp2_version": {
+    "min": "0.1.5",
+    "max": "*"
+  },
+  "dependencies": [
+    {
+      "id": "com.github.x606.spacewarp",
+      "version": {
+        "min": "1.6.0",
+        "max": "*"
+      }
+    }
+  ],
+  "conflicts": []
+}
