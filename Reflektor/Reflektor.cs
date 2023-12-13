@@ -38,6 +38,8 @@ public class Reflektor : BaseSpaceWarpPlugin
         Instance = this;
         Log("Initialized");
 
+        WindowTitle t = new();
+        
         MainWindow mainWindow = new();
         _raycastWindow = new RaycastWindow(mainWindow);
 
