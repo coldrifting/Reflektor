@@ -1,6 +1,8 @@
 using System.Linq;
+using Reflektor.Extensions;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static Reflektor.Extensions.ParseExtensions;
 using Component = UnityEngine.Component;
 
 namespace Reflektor.Windows;
@@ -134,7 +136,7 @@ public class DetailsPane
             return;
         }
 
-        bool valid = Extensions.TryParse(textField.value, out Vector3 vec);
+        bool valid = TryParse(textField.value, out Vector3 vec);
         switch (name)
         {
             case LabelName:
@@ -191,10 +193,10 @@ public class DetailsPane
                 textField.SetValueWithoutNotify(_window.Cur.name);
                 break;
             case LabelPos:
-                textField.SetValueWithoutNotify(_window.Cur.transform.localPosition.ToSimpleString());
+                textField.SetValueWithoutNotify(ToSimpleString(_window.Cur.transform.localPosition));
                 break;
             case LabelScale:
-                textField.SetValueWithoutNotify(_window.Cur.transform.localScale.ToSimpleString());
+                textField.SetValueWithoutNotify(ToSimpleString(_window.Cur.transform.localScale));
                 break;
             case LabelSize:
                 textField.SetVisible(false);
@@ -202,9 +204,10 @@ public class DetailsPane
                 {
                     textField.SetVisible(true);
                     textField.SetValueWithoutNotify(
+                        ToSimpleString(
                         _window.CanvasScaler is not null
-                            ? _window.CanvasScaler.referenceResolution.ToSimpleString()
-                            : _window.RectTransform.sizeDelta.ToSimpleString());
+                            ? _window.CanvasScaler.referenceResolution
+                            : _window.RectTransform.sizeDelta));
                 }
 
                 break;
@@ -213,7 +216,7 @@ public class DetailsPane
                 if (_window.RectTransform is not null)
                 {
                     textField.SetVisible(true);
-                    textField.SetValueWithoutNotify(_window.RectTransform.anchoredPosition.ToSimpleString());
+                    textField.SetValueWithoutNotify(ToSimpleString(_window.RectTransform.anchoredPosition));
                 }
 
                 break;

@@ -63,10 +63,10 @@ public class PropertiesPane
                         output = s;
                         return true;
                     }),
-                    Vector2 valueVec2 => AddText(p, _window.Component, valueVec2, Extensions.ToSimpleString, Extensions.TryParse),
-                    Vector3 valueVec3 => AddText(p, _window.Component, valueVec3, Extensions.ToSimpleString, Extensions.TryParse),
-                    Vector4 valueVec4 => AddText(p, _window.Component, valueVec4, Extensions.ToSimpleString, Extensions.TryParse),
-                    Quaternion valueQuat => AddText(p, _window.Component, valueQuat, Extensions.ToSimpleString, Extensions.TryParse),
+                    Vector2 valueVec2 => AddText(p, _window.Component, valueVec2, Extensions.ParseExtensions.ToSimpleString, Extensions.ParseExtensions.TryParse),
+                    Vector3 valueVec3 => AddText(p, _window.Component, valueVec3, Extensions.ParseExtensions.ToSimpleString, Extensions.ParseExtensions.TryParse),
+                    Vector4 valueVec4 => AddText(p, _window.Component, valueVec4, Extensions.ParseExtensions.ToSimpleString, Extensions.ParseExtensions.TryParse),
+                    Quaternion valueQuat => AddText(p, _window.Component, valueQuat, Extensions.ParseExtensions.ToSimpleString, Extensions.ParseExtensions.TryParse),
                     int valInt => AddText(p, _window.Component, valInt, s => s.ToString(), int.TryParse),
                     float valFloat => AddText(p, _window.Component, valFloat, s => s.ToString(CultureInfo.InvariantCulture), float.TryParse),
                     _ => AddLabel(p, _window.Component, value)

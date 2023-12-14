@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Reflektor.Extensions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -44,7 +45,7 @@ public class ObjectsPane
                 return;
             }
 
-            int numChildren = gObj.GetChildren().Count();
+            int numChildren = GetChildren(gObj).Count();
             string prefix = numChildren > 0 ? $"<color=#777777>[</color><color=#00AA77>{numChildren.ToString()}</color><color=#777777>]</color> " : "";
             label.text = prefix + gObj.name;
             label.style.color = gObj.activeSelf ? Color.white : Color.grey;
@@ -164,10 +165,10 @@ public class ObjectsPane
         for (int i = 0; i < sceneCount; i++)
         {
             Scene scene = SceneManager.GetSceneAt(i);
-            _scenes.Add(scene);
+            Add(_scenes, scene);
         }
 
-        _scenes.Add(GetDontDestroyScene());
+        Add(_scenes, GetDontDestroyScene());
     }
 
     private static Scene? GetDontDestroyScene()
@@ -184,5 +185,26 @@ public class ObjectsPane
         return output.name == "DontDestroyOnLoad" 
             ? output 
             : null;
+    }
+    
+    private static void Add(IDictionary<string, Scene> scenes, Scene? s)
+    {
+        if (s is null)
+        {
+            return;
+        }
+        
+        scenes.Add(s.Value.name, s.Value);
+    }
+
+    private static IEnumerable<GameObject> GetChildren(GameObject obj)
+    {
+        List<GameObject> objects = new();
+        foreach (Transform t in obj.transform)
+        {
+            objects.Add(t.gameObject);
+        }
+
+        return objects;
     }
 }
