@@ -75,7 +75,8 @@ public class Browser : VisualElement
     private void SetStyle()
     {
         AddToClassList("root");
-        
+
+        style.position = Position.Absolute;
         style.width = 650;
         style.paddingTop = 12;
         style.paddingBottom = 12;

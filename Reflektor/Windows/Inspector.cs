@@ -234,6 +234,7 @@ public class Inspector : VisualElement
     {
         AddToClassList("root");
         
+        style.position = Position.Absolute;
         style.width = 1500;
         style.minWidth = 1200;
         style.maxWidth = 1200;
