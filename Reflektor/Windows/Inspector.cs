@@ -1,36 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using UitkForKsp2.API;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-using Reflektor.Extensions;
-using UitkForKsp2.API;
+namespace Reflektor.Windows;
 
-namespace Reflektor;
-
-public class WindowTitle : VisualElement
+public class Inspector : VisualElement
 {
-    private readonly VisualElement _root;
-    
+    // GUI Elements
     private readonly TextField _path = new();
-    
     private readonly GroupBox _tabBar = new();
     private readonly ScrollView _tabScrollView = new(ScrollViewMode.Horizontal);
 
-    private readonly Dictionary<object, (Button, WindowTab)> _tabs = new();
-
-    public static WindowTitle? Instance;
-
+    // Data
     private object? _currentObject;
-    private object? _lastObject;
+    private object? _prevObject;
+
+    private readonly Dictionary<object, (int, Button, InspectorTab)> _tabs = new();
     
-    public WindowTitle()
+    public Inspector()
     {
-        Instance = this;
-
-        _root = Element.Root();
-
         _path.isDelayed = true;
         _path.RegisterValueChangedCallback(evt =>
         {
@@ -64,29 +56,34 @@ public class WindowTitle : VisualElement
         
         SetStyle();
 
-        _root.Add(_path);
-        _root.Add(_tabScrollView);
+        Add(_path);
+        Add(_tabScrollView);
+        
+        _tabScrollView.Add(_tabBar);
 
         try
         {
+            AddTab(new TestClass());
             GameObject g = GameObject.Find("/GameManager/Default Game Instance(Clone)/UI Manager(Clone)/Main Canvas");
-            if (g is not null)
+            if (g is null)
             {
-                AddTab(g);
-                RectTransform r = g.GetComponent<RectTransform>();
-                if (r is not null)
-                {
-                    AddTab(r);
-                }
-                
-                Canvas c = g.GetComponent<Canvas>();
-                if (c is not null)
-                {
-                    AddTab(c);
-                }
-                
-                SwitchTab(g);
+                return;
             }
+
+            AddTab(g);
+            RectTransform r = g.GetComponent<RectTransform>();
+            if (r is not null)
+            {
+                AddTab(r);
+            }
+                
+            Canvas c = g.GetComponent<Canvas>();
+            if (c is not null)
+            {
+                AddTab(c);
+            }
+                
+            SwitchTab(g);
         }
         catch (Exception e)
         {
@@ -94,9 +91,8 @@ public class WindowTitle : VisualElement
             Reflektor.Log(e.Message);
             Reflektor.Log(e.StackTrace);
         }
-
-        Add(_root);
-        _root.AddManipulator(new DragManipulator(true));
+        
+        //this.Hide();
     }
 
     private static bool TryGetCompByName(GameObject candidate, string compTargetType, out Component? comp)
@@ -104,7 +100,7 @@ public class WindowTitle : VisualElement
         foreach (Component c in candidate.GetComponents<Component>())
         {
             string curType = c.GetType().ToString().Split(".").Last().Trim();
-            if (compTargetType != curType)
+            if (!string.Equals(compTargetType, curType, StringComparison.CurrentCultureIgnoreCase))
             {
                 continue;
             }
@@ -119,52 +115,53 @@ public class WindowTitle : VisualElement
 
     public void SwitchTab(object obj)
     {
+        this.Show();
         AddTab(obj);
         
-        _lastObject = _currentObject;
+        _prevObject = _currentObject;
 
-        int counter = 0;
-        foreach ((Button b, WindowTab t) in _tabs.Values.ToArray())
+        foreach ((int id, Button b, InspectorTab t) in _tabs.Values)
         {
-            b.style.backgroundColor = counter++ % 2 == 0 
-                ? new Color(0.5f, 0.5f, 0.5f) 
+            b.style.backgroundColor = id % 2 == 0 
+                ? new Color(0.3f, 0.3f, 0.3f) 
                 : new Color(0.4f, 0.4f, 0.4f);
             
-            t.SetVisible(false);
+            t.Hide();
         }
-        
-        (Button curBtn, WindowTab curTab) = _tabs[obj];
-        curTab.SetVisible(true);
+
+        (_, Button curBtn, InspectorTab curTab) = _tabs[obj];
+        curTab.Show();
         curBtn.style.backgroundColor = new Color(0.05f, 0.45f, 0.35f);
         curBtn.style.color = Color.white;
-
+        
         _currentObject = obj;
     }
 
-    private void SetTabButtonStyles()
+    private void UpdateTabButtonStyles()
     {
-        int counter = 0;
-        var bt = _tabs.Values.ToArray();
-        foreach ((Button b, WindowTab _) in bt)
+        foreach ((int id, Button b, InspectorTab _) in _tabs.Values)
         {
-            b.style.borderTopLeftRadius = 0;
-            b.style.borderBottomLeftRadius = 0;
-            b.style.borderTopRightRadius = 0;
-            b.style.borderBottomRightRadius = 0;
-            
-            if (counter == 0)
+            if (id == 0)
             {
-                b.style.borderTopLeftRadius = 4;
-                b.style.borderBottomLeftRadius = 4;
+                b.style.borderTopLeftRadius = 6;
+                b.style.borderBottomLeftRadius = 6;
+            }
+            else
+            {
+                b.style.borderTopLeftRadius = 0;
+                b.style.borderBottomLeftRadius = 0;
             }
 
-            if (counter == bt.Length - 1)
+            if (id == _tabs.Count - 1)
             {
-                b.style.borderTopRightRadius = 4;
-                b.style.borderBottomRightRadius = 4;
+                b.style.borderTopRightRadius = 6;
+                b.style.borderBottomRightRadius = 6;
             }
-            
-            counter++;
+            else
+            {
+                b.style.borderTopRightRadius = 0;
+                b.style.borderBottomRightRadius = 0;
+            }
         }
     }
 
@@ -175,7 +172,7 @@ public class WindowTitle : VisualElement
             return;
         }
 
-        WindowTab tabPane = new(obj);
+        InspectorTab tabPane = new(obj);
         Button tabButton = new();
         tabButton.text = obj.GetShortName(true);
         tabButton.clicked += () => { SwitchTab(obj); };
@@ -186,26 +183,29 @@ public class WindowTitle : VisualElement
                 CloseTab(obj);
             }
         });
-
+        
+        _tabs[obj] = (_tabs.Count, tabButton, tabPane);
         _tabBar.Add(tabButton);
-        _root.Add(tabPane);
-
-        _tabs.Add(obj, (tabButton, tabPane));
-        SetTabButtonStyles();
+        Add(tabPane);
+        
+        UpdateTabButtonStyles();
     }
 
     private void CloseTab(object obj)
     {
-        (Button button, WindowTab windowTab) = _tabs[obj];
-        _tabBar.Remove(button);
+        (_, Button curBtn, InspectorTab curTab) = _tabs[obj];
+
+        _tabBar.Remove(curBtn);
         _tabs.Remove(obj);
-        _root.Remove(windowTab);
+        Remove(curTab);
+        
+        _tabs.Reorder();
+    
+        UpdateTabButtonStyles();
 
-        SetTabButtonStyles();
-
-        if (obj == _lastObject)
+        if (obj == _prevObject)
         {
-            _lastObject = null;
+            _prevObject = null;
         }
 
         if (obj == _currentObject)
@@ -213,37 +213,37 @@ public class WindowTitle : VisualElement
             _currentObject = null;
         }
 
-        if (_lastObject is not null)
+        if (_prevObject is not null)
         {
-            SwitchTab(_lastObject);
+            SwitchTab(_prevObject);
             return;
         }
-        
-        object? objToSwitch = _tabs.Keys.First();
-        if (objToSwitch is not null)
+
+        if (_tabs.Count > 0)
         {
-            SwitchTab(objToSwitch);
+            SwitchTab(_tabs.Keys.First());
         }
         else
         {
             // No more tabs left
-            this.SetVisible(false);
+            this.Hide();
         }
     }
 
     private void SetStyle()
     {
-        _root.style.flexGrow = 1;
-        _root.style.width = 1500;
-        _root.style.minWidth = 1200;
-        _root.style.maxWidth = 1200;
-        _root.style.height = 900;
-        _root.style.minHeight = 900;
-        _root.style.maxHeight = 900;
+        AddToClassList("root");
+        
+        style.width = 1500;
+        style.minWidth = 1200;
+        style.maxWidth = 1200;
+        style.height = 900;
+        style.minHeight = 900;
+        style.maxHeight = 900;
 
         _path.style.fontSize = 12;
 
-        _tabScrollView.Add(_tabBar);
+        _tabScrollView.style.backgroundColor = new StyleColor(StyleKeyword.None);
         _tabScrollView.style.flexDirection = FlexDirection.Row;
         _tabScrollView.style.maxHeight = 44;
         _tabScrollView.style.minHeight = 44;
@@ -262,5 +262,29 @@ public class WindowTitle : VisualElement
         _tabBar.style.paddingTop = 0;
         
         _tabBar.style.flexDirection = new StyleEnum<FlexDirection>(FlexDirection.Row);
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "CollectionNeverQueried.Local")]
+public class TestClass
+{
+    private List<int> intList { get; set; } = new();
+    private readonly List<float> _floatList = new();
+    private readonly List<string> _stringList = new();
+    
+    public TestClass()
+    {
+        intList.Add(1);
+        intList.Add(0);
+        intList.Add(36);
+
+        _floatList.Add(3.0f);
+        _floatList.Add(-1.5f);
+
+        _stringList.Add("A");
+        _stringList.Add("B");
+        _stringList.Add("C");
+        _stringList.Add("D");
     }
 }

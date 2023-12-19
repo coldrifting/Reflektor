@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Reflektor.Extensions;
 using UnityEngine.UIElements;
 
 namespace Reflektor.Elements;
@@ -9,6 +8,7 @@ public class ElementBool : BaseElement
     public ElementBool(object obj, MemberInfo memInfo) : base(obj, memInfo)
     {
         Toggle toggle = new();
+        toggle.AddToClassList("toggle");
         toggle.style.height = Length.Percent(80);
         toggle.style.width = Length.Percent(80);
         Add(toggle);
@@ -20,7 +20,7 @@ public class ElementBool : BaseElement
         }
         
         // Read only and change callbacks
-        bool enabled = MemInfo.HasSetMethod() && !obj.IsStruct();
+        bool enabled = MemInfo.HasSetMethod() && !obj.GetType().IsStruct();
         toggle.SetEnabled(enabled);
         if (enabled)
         {

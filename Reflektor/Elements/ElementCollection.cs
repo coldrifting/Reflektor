@@ -47,10 +47,19 @@ public class ElementCollection : BaseElement
         list.makeItem += () => new Label();
         list.bindItem += (element, i) =>
         {
-            if (element is Label label)
+            if (element is not Label label)
             {
-                label.text = objs[i].ToString();
+                return;
             }
+
+            label.text = objs[i].ToString();
+            label.RegisterCallback((MouseDownEvent evt) =>
+            {
+                if (evt.button == 1)
+                {
+                    Reflektor.Inspect(objs[i]);
+                }
+            });
         };
     }
 }

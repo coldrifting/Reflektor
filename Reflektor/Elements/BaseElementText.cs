@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using Reflektor.Extensions;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -17,13 +16,10 @@ public class BaseElementText<T> : BaseElement
     {
         _textField.isDelayed = true;
         _textField.value = GetValue(normalizer);
-        //_textField.style.fontSize = 12;
         _textField.style.minWidth = Length.Percent(10);
         _textField.style.maxWidth = Length.Percent(55);
-        //_textField.style.height = Length.Percent(90);
-        //_textField.style.minHeight = 24;
-        //_textField.style.maxHeight = 24;
-        _textField.style.paddingTop = 0;
+        _textField.style.height = 30;
+        _textField.style.paddingTop = 2;
         _textField.style.paddingBottom = 2;
         _textField.style.fontSize = 14;
         _textField.style.marginTop = 0;
@@ -36,7 +32,7 @@ public class BaseElementText<T> : BaseElement
             _textField.style.color = Color.magenta;
         }
 
-        if (MemInfo.HasSetMethod() && !obj.IsStruct())
+        if (MemInfo.HasSetMethod() && !obj.GetType().IsStruct())
         {
             _textField.RegisterValueChangedCallback(evt =>
             {

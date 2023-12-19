@@ -2,14 +2,12 @@
 using System.Reflection;
 using UnityEngine;
 
-using static Reflektor.Extensions.ParseExtensions;
-
 namespace Reflektor.Elements;
 
 public class ElementQuaternion : BaseElementText<Quaternion>
 {
     public ElementQuaternion(object obj, MemberInfo memberInfo) : 
-        base(obj, memberInfo, TryParse, ToSimpleString)
+        base(obj, memberInfo, Utils.TryParse, Utils.ToSimpleString)
     {
     }
 }
@@ -17,7 +15,7 @@ public class ElementQuaternion : BaseElementText<Quaternion>
 public class ElementVector4 : BaseElementText<Vector4>
 {
     public ElementVector4(object obj, MemberInfo memberInfo) 
-        : base(obj, memberInfo, TryParse, ToSimpleString)
+        : base(obj, memberInfo, Utils.TryParse, Utils.ToSimpleString)
     {
     }
 }
@@ -25,7 +23,7 @@ public class ElementVector4 : BaseElementText<Vector4>
 public class ElementVector3 : BaseElementText<Vector3>
 {
     public ElementVector3(object obj, MemberInfo memberInfo) 
-        : base(obj, memberInfo, TryParse, ToSimpleString)
+        : base(obj, memberInfo, Utils.TryParse, Utils.ToSimpleString)
     {
     }
 }
@@ -33,7 +31,7 @@ public class ElementVector3 : BaseElementText<Vector3>
 public class ElementVector2 : BaseElementText<Vector2>
 {
     public ElementVector2(object obj, MemberInfo memberInfo) 
-        : base(obj, memberInfo, TryParse, ToSimpleString)
+        : base(obj, memberInfo, Utils.TryParse, Utils.ToSimpleString)
     {
     }
 }

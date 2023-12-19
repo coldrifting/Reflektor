@@ -2,22 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
-namespace Reflektor.Extensions;
+namespace Reflektor;
 
-public static class TypeExtensions
+public static class Extensions
 {
-    public static bool IsStruct(this object obj)
+    // Types and Reflection
+    public static bool IsStruct(this Type type)
     {
-        Type type = obj.GetType();
         return type is { IsValueType: true, IsPrimitive: false };
     }
     
-    public static bool IsGenericList(this object o)
+    public static bool IsGenericList(this Type type)
     {
-        Type oType = o.GetType();
-        return (oType.IsGenericType && (oType.GetGenericTypeDefinition() == typeof(List<>)));
+        return (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(List<>)));
     }
     
     public static bool HasSetMethod(this MemberInfo memberInfo) => memberInfo switch
@@ -102,5 +102,56 @@ public static class TypeExtensions
             GameObject => $"[G] {shortName}",
             _ => shortName
         };
+    }
+    
+    // Misc
+    public static void Reorder<T,TE>(this Dictionary<object, (int, T, TE)> dict)
+    {
+        List<(object, int, T, TE)> l = new(dict.Values.Count);
+        l.AddRange(dict.Select(v => (v.Key, v.Value.Item1, v.Value.Item2, v.Value.Item3)));
+        l.Sort(((tuple, valueTuple) => tuple.Item2.CompareTo(valueTuple.Item2)));
+
+        dict.Clear();
+
+        int counter = 0;
+        foreach (var ax in l)
+        {
+            dict.Add(ax.Item1, (counter++, ax.Item3, ax.Item4));
+        }
+    }
+    
+    public static string? Truncate(this string? value, int maxLength, string truncationSuffix = "…")
+    {
+        return value?.Trim().Length > maxLength
+            ? value.Trim()[..maxLength] + truncationSuffix
+            : value;
+    }
+
+    public static string SetEnabledColor(this object? input, bool enable)
+    {
+        return enable
+            ? WrapColor(input, "ffffff")
+            : WrapColor(input, "777777");
+    }
+
+    private static string WrapColor(this object? input, string hexColor)
+    {
+        return $"<color=#{hexColor}>{input}</color>";
+    }
+    
+    public static string StripHtml(this string input)
+    {
+        return Regex.Replace(input, "<.*?>", string.Empty);
+    }
+    
+    public static string GetPath(this GameObject obj)
+    {
+        string path = "/" + obj.name;
+        while (obj.transform.parent != null)
+        {
+            obj = obj.transform.parent.gameObject;
+            path = "/" + obj.name + path;
+        }
+        return path;
     }
 }

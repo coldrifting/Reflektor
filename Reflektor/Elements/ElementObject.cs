@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Reflection;
-using Reflektor.Extensions;
 using UnityEngine.UIElements;
 
 namespace Reflektor.Elements;
@@ -38,10 +37,7 @@ public class ElementObject : BaseElement
         
         button.clicked += () =>
         {
-            if (WindowTitle.Instance is not null)
-            {
-                WindowTitle.Instance.SwitchTab(objVal);
-            }
+            Reflektor.Inspect(objVal);
         };
     }
 }

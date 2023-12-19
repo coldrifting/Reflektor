@@ -4,17 +4,16 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Reflektor.Elements;
-using Reflektor.Extensions;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Reflektor;
+namespace Reflektor.Windows;
 
-public class WindowTab : VisualElement
+public class InspectorTab : VisualElement
 {
     private readonly VisualElement _canvas = new();
     
-    public WindowTab(object obj)
+    public InspectorTab(object obj)
     {
         ScrollView scrollView = new(ScrollViewMode.Vertical);
         int counter = 0;
@@ -28,9 +27,13 @@ public class WindowTab : VisualElement
             try
             {
                 BaseElement element;
-                
-                Type memberType = memberInfo.GetType();
-                Reflektor.Log(memberInfo.Name);
+
+                object? memberObj = memberInfo.GetValue(obj);
+                if (memberObj is null)
+                {
+                    continue;
+                }
+                Type memberType = memberObj.GetType();
                 if (memberType.IsEnum)
                 {
                     element = new ElementEnum(obj, memberInfo);

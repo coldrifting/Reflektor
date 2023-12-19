@@ -1,41 +1,47 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
-using Reflektor.Extensions;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Reflektor.Elements;
 
 public class ElementEnum : BaseElement
 {
+
+    private readonly bool _hasSetMethod;
+    
     public ElementEnum(object obj, MemberInfo memInfo) : base(obj, memInfo)
     {
         // Make sure it's an Enum
-        Type type = MemInfo.GetType();
-        if (!type.IsEnum)
+        Type? type = MemInfo.GetValue(obj)?.GetType();
+        if (type is null || !type.IsEnum)
         {
             return;
         }
         
         // Setup GUI
         DropdownField dropdown = new();
-        dropdown.label = MemInfo.Name;
+        dropdown.style.width = Length.Percent(25);
+        dropdown.style.color = Color.white;
+        Utils.DropdownFix(dropdown);
         Add(dropdown);
+        
+        _hasSetMethod = MemInfo.HasSetMethod();
 
         // Set values
         foreach (object? val in Enum.GetValues(type))
         {
-            dropdown.choices.Add(val.ToString());
+            dropdown.choices.Add(val.SetEnabledColor(_hasSetMethod));
         }
         GetDropdownValue(dropdown);
 
         // Setup callbacks
-        dropdown.SetEnabled(MemInfo.HasSetMethod() && !obj.IsStruct());
-        if (dropdown.enabledSelf)
+        if (!obj.GetType().IsStruct())
         {
             dropdown.RegisterValueChangedCallback(evt =>
             {
-                if (Enum.TryParse(type, evt.newValue, out object result))
+                string enumVal = evt.newValue.StripHtml();
+                if (Enum.TryParse(type, enumVal, out object result))
                 {
                     MemInfo.SetValue(Obj, result);
                 }
@@ -47,6 +53,7 @@ public class ElementEnum : BaseElement
 
     private void GetDropdownValue(DropdownField dropdown)
     {
-        dropdown.SetValueWithoutNotify(MemInfo.GetValue(Obj)?.ToString() ?? dropdown.choices.First());
+        string? val = MemInfo.GetValue(Obj)?.ToString();
+        dropdown.SetValueWithoutNotify(val.SetEnabledColor(_hasSetMethod));
     }
 }
