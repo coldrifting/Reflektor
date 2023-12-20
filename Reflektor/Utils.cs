@@ -83,12 +83,14 @@ public static class Utils
         }
     }
 
-    public static void SetListViewEmptyText(ListView listView, string message)
+    public static void SetListViewEmptyText(ListView? listView, string message, string? hexColor = null)
     {
         VisualElement? emptyText = listView.Query(className: "unity-list-view__empty-label");
         if (emptyText is Label l)
         {
-            l.text = message;
+            l.text = hexColor is null 
+                ? message 
+                : $"<color={hexColor}>{message}</color>";
         }
     }
     

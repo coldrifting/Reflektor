@@ -25,6 +25,10 @@
       <PackageReference Include="UnityEngine.Modules" Version="2022.3.5" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="_Resources\assets\bundles\" />
+    </ItemGroup>
+
     
     <Target Name="CopyToKSP2Dir" AfterTargets="AfterBuild">
         <ItemGroup>

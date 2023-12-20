@@ -5,29 +5,46 @@ namespace Reflektor.Elements;
 
 public class ElementBool : BaseElement
 {
+    private readonly Toggle _toggle = new ();
+    
     public ElementBool(object obj, MemberInfo memInfo) : base(obj, memInfo)
     {
-        Toggle toggle = new();
-        toggle.AddToClassList("toggle");
-        toggle.style.height = Length.Percent(80);
-        toggle.style.width = Length.Percent(80);
-        Add(toggle);
+        _toggle.AddToClassList("toggle");
+        SetStyle();
+        Add(_toggle);
 
         // Initial Value
-        if (MemInfo.GetValue(Obj) is bool boolVal)
-        {
-            toggle.SetValueWithoutNotify(boolVal);
-        }
+        SetFieldValue();
         
         // Read only and change callbacks
-        bool enabled = MemInfo.HasSetMethod() && !obj.GetType().IsStruct();
-        toggle.SetEnabled(enabled);
-        if (enabled)
+        bool enabled = MemInfo.HasSetMethod() && !Obj.GetType().IsStruct();
+        _toggle.SetEnabled(enabled);
+
+        Reflektor.PropertyChangedEvent += evtObj =>
         {
-            toggle.RegisterValueChangedCallback(evt =>
+            if (evtObj == Obj)
             {
-                MemInfo.SetValue(Obj, evt.newValue);
-            });
+                SetFieldValue();
+            }
+        };
+        _toggle.RegisterValueChangedCallback(evt =>
+        {
+            MemInfo.SetValue(Obj, evt.newValue);
+            Reflektor.FirePropertyChangedEvent(Obj);
+        });
+    }
+
+    private void SetFieldValue()
+    {
+        if (MemInfo.GetValue(Obj) is bool boolVal)
+        {
+            _toggle.SetValueWithoutNotify(boolVal);
         }
+    }
+
+    private void SetStyle()
+    {
+        _toggle.style.height = Length.Percent(80);
+        _toggle.style.width = Length.Percent(80);
     }
 }

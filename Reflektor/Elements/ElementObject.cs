@@ -6,38 +6,63 @@ namespace Reflektor.Elements;
 
 public class ElementObject : BaseElement
 {
+    private readonly Button _inspectBtn = new();
+    private readonly Label _inspectLabel = new();
+
+    private readonly object? _inspectObj;
+    
     public ElementObject(object obj, MemberInfo memberInfo) :
         base(obj, memberInfo)
     {
-        object? objVal = MemInfo.GetValue(obj);
+        _inspectObj = MemInfo.GetValue(Obj);
 
-        Label labelVal = new(objVal?.ToString().Split("\n").First().Trim());
-        labelVal.style.paddingLeft = 20;
-        labelVal.style.maxWidth = Length.Percent(40);
-        Button button = new();
-        button.style.minWidth = Length.Percent(8);
-        button.style.height = 24;
-        button.style.paddingTop = 2;
-        button.style.paddingBottom = 0;
-        button.style.fontSize = 12;
-        button.text = objVal is not null ? "Inspect" : "null";
-        if (objVal == obj)
+        Label labelVal = new();
+        if (_inspectObj == null)
         {
-            button.text = "this";
+            _inspectBtn.text = "null";
         }
-        
-        Add(button);
+        else if (_inspectObj == Obj)
+        {
+            _inspectBtn.text = "this";
+        }
+        else
+        {
+            _inspectBtn.text = "Inspect";
+        }
+
+        SetFieldValue();
+        SetStyle();
+        Add(_inspectBtn);
         Add(labelVal);
-
-        if (objVal is null)
-        {
-            button.SetEnabled(false);
-            return;
-        }
         
-        button.clicked += () =>
+        _inspectBtn.clicked += () =>
         {
-            Reflektor.Inspect(objVal);
+            Reflektor.Inspect(_inspectObj);
+        };        
+        
+        Reflektor.PropertyChangedEvent += evtObj =>
+        {
+            if (evtObj == Obj)
+            {
+                SetFieldValue();
+            }
         };
+    }
+
+    private void SetFieldValue()
+    {
+        _inspectBtn.SetEnabled(_inspectObj is not null);
+        _inspectLabel.text = _inspectObj?.ToString().Split("\n").First().Trim();
+    }
+
+    private void SetStyle()
+    {
+        _inspectLabel.style.paddingLeft = 20;
+        _inspectLabel.style.maxWidth = Length.Percent(40);
+        _inspectBtn.style.minWidth = Length.Percent(8);
+        _inspectBtn.style.height = 24;
+        _inspectBtn.style.paddingTop = 2;
+        _inspectBtn.style.paddingBottom = 0;
+        _inspectBtn.style.fontSize = 12;   
     }
 }

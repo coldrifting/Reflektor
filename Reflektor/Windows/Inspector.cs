@@ -61,6 +61,7 @@ public class Inspector : VisualElement
         
         _tabScrollView.Add(_tabBar);
 
+        /*
         try
         {
             AddTab(new TestClass());
@@ -91,8 +92,9 @@ public class Inspector : VisualElement
             Reflektor.Log(e.Message);
             Reflektor.Log(e.StackTrace);
         }
+        */
         
-        //this.Hide();
+        this.Hide();
     }
 
     private static bool TryGetCompByName(GameObject candidate, string compTargetType, out Component? comp)
@@ -135,6 +137,8 @@ public class Inspector : VisualElement
         curBtn.style.color = Color.white;
         
         _currentObject = obj;
+
+        Reflektor.FirePropertyChangedEvent(_currentObject);
     }
 
     private void UpdateTabButtonStyles()
@@ -243,6 +247,13 @@ public class Inspector : VisualElement
         style.maxHeight = 900;
 
         _path.style.fontSize = 12;
+        foreach (VisualElement v in _path.Children())
+        {
+            v.style.borderTopLeftRadius = 6;
+            v.style.borderTopRightRadius = 6;
+            v.style.borderBottomLeftRadius = 6;
+            v.style.borderBottomRightRadius = 6;
+        }
 
         _tabScrollView.style.backgroundColor = new StyleColor(StyleKeyword.None);
         _tabScrollView.style.flexDirection = FlexDirection.Row;

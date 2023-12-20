@@ -6,104 +6,118 @@ using UnityEngine.UIElements;
 
 namespace Reflektor.Windows;
 
-public class Browser : VisualElement
+public class Browser
 {
     // Events
     public event Action<GameObject?>? CurrentChangedEvent;
-
-    // GUI Components
-    private readonly TextField _path = new();
-    private readonly VisualElement _splitter = new();
     
-    private readonly BrowserRaycastPane _raycastPane;
-    private readonly BrowserObjectPane _objectPane;
+    // GUI Elements
+    private readonly VisualElement _root;
+    private readonly TextField _path;
     
     // Data
-    public readonly List<string> DisallowDisableList = new()
-    {
-        "GameManager",
-        "KerbalPanelSettings",
-        "_Inspector",
-        "_Inspector_Browser"
-    };
-    
     private GameObject? _current;
     public GameObject? Current
     {
         get => _current;
         set
         {
-            _path.SetValueWithoutNotify(value != null ? value.GetPath() : "/");
             _current = value;
+
+            _oldPath = value != null ? value.GetPath() : "/";
+            _path.SetValueWithoutNotify(_oldPath);
+            SetPathFontSize();
             
             CurrentChangedEvent?.Invoke(value);
         }
     }
+    private readonly BrowserRaycast _browserRaycast;
+    private string _oldPath = "/";
 
-    public Browser(Inspector objectInspector)
+    public Browser(VisualElement root, Inspector inspector)
     {
-        _path.isDelayed = true;
+        _root = root;
+        _path = root.Q<TextField>(name: "PathInput");
+        _path.isDelayed = false;
         _path.RegisterValueChangedCallback(evt =>
         {
-            GameObject? candidate = GameObject.Find(evt.newValue);
-            if (candidate is null)
+            SetPathFontSize();
+        });
+        
+        _path.RegisterCallback((FocusOutEvent evt) =>
+        {
+            if (evt.target is TextField text)
             {
-                _path.SetValueWithoutNotify(evt.previousValue);
-            }
-            else
-            {
-                Current = candidate;
-                HideRaycastResults();
+                string newPath = text.text;
+                FindGameObject(newPath);
             }
         });
 
-        _raycastPane = new BrowserRaycastPane(this);
-        _raycastPane.Hide();
-        _splitter.Add(_raycastPane);
+        _browserRaycast = new BrowserRaycast(this, root);
+        _browserRaycast.Setup();
+        
+        var browserObjects = new BrowserObjects(this, root);
+        browserObjects.Setup();
+        
+        var browserValues = new BrowserValues(this, root, inspector);
+        browserValues.Setup();
+    }
 
-        _objectPane = new BrowserObjectPane(this);
-        _splitter.Add(_objectPane);
-        
-        _splitter.Add(new BrowserValuePane(this, objectInspector));
-        
-        Add(_path);
-        Add(_splitter);
-        
-        SetStyle();
+    private void FindGameObject(string newPath)
+    {
+        GameObject? candidate = GameObject.Find(newPath);
+        if (candidate is null)
+        {
+            _path.SetValueWithoutNotify(_oldPath);
+            SetPathFontSize();
+        }
+        else
+        {
+            _browserRaycast.HideRaycastResults();
+            Current = candidate;
+            _oldPath = newPath;
+        }
+    }
+
+    private void SetPathFontSize()
+    {
+        float divisor = Math.Max(1.0f, _path.value.Length / 75.0f);
+        _path.style.fontSize = Math.Max(14 / divisor, 9);
+    }
+
+    public void ToggleDisplay()
+    {
+        _root.ToggleDisplay();
+    }
+
+    public void Refresh()
+    {
+        Current = Current;
+    }
+
+    public void Up()
+    {
+        Current = Current != null && Current.transform.parent != null 
+            ? Current.transform.parent.gameObject 
+            : null;
+    }
+
+    public void ShowRaycastResults(IEnumerable<GameObject> objects)
+    {
+        _root.Show();
+        _browserRaycast.ShowRaycastResults(objects);
     }
     
-    private void SetStyle()
+    public static bool CanDisable(string name)
     {
-        AddToClassList("root");
-
-        style.position = Position.Absolute;
-        style.width = 650;
-        style.paddingTop = 12;
-        style.paddingBottom = 12;
-        style.paddingLeft = 12;
-        style.paddingRight = 12;
-
-        _path.style.fontSize = 12;
-        _path.ElementAt(0).style.borderTopLeftRadius = 3;
-        _path.ElementAt(0).style.borderTopRightRadius = 3;
-        _path.ElementAt(0).style.borderBottomLeftRadius = 3;
-        _path.ElementAt(0).style.borderBottomRightRadius = 3;
+        List<string> disallowDisableList = new()
+        {
+            "GameManager",
+            "KerbalPanelSettings",
+            "_Inspector",
+            "_Inspector_Browser"
+        };
         
-        _splitter.style.flexDirection = new StyleEnum<FlexDirection>(FlexDirection.Row);
-        _splitter.style.minHeight = 600;
-        _splitter.style.maxHeight = 600;
-    }
-
-    public void ShowRaycastResults(IEnumerable<GameObject> gameObjects)
-    {
-        _raycastPane.UpdateRaycastList(gameObjects);
-        _objectPane.Hide();
-        _raycastPane.Show();
-    }
-
-    public void HideRaycastResults()
-    {
-        _raycastPane.Hide();
-        _objectPane.Show();
+        return !disallowDisableList.Contains(name);
     }
 }

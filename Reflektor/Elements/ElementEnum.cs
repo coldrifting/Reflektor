@@ -7,8 +7,8 @@ namespace Reflektor.Elements;
 
 public class ElementEnum : BaseElement
 {
-
     private readonly bool _hasSetMethod;
+    private readonly DropdownField _dropdownField = new();
     
     public ElementEnum(object obj, MemberInfo memInfo) : base(obj, memInfo)
     {
@@ -20,40 +20,53 @@ public class ElementEnum : BaseElement
         }
         
         // Setup GUI
-        DropdownField dropdown = new();
-        dropdown.style.width = Length.Percent(25);
-        dropdown.style.color = Color.white;
-        Utils.DropdownFix(dropdown);
-        Add(dropdown);
+        SetStyle();
+        Add(_dropdownField);
         
         _hasSetMethod = MemInfo.HasSetMethod();
 
         // Set values
         foreach (object? val in Enum.GetValues(type))
         {
-            dropdown.choices.Add(val.SetEnabledColor(_hasSetMethod));
+            _dropdownField.choices.Add(val.SetEnabledColor(_hasSetMethod));
         }
-        GetDropdownValue(dropdown);
+        SetFieldValue();
 
         // Setup callbacks
-        if (!obj.GetType().IsStruct())
+        if (obj.GetType().IsStruct())
         {
-            dropdown.RegisterValueChangedCallback(evt =>
-            {
-                string enumVal = evt.newValue.StripHtml();
-                if (Enum.TryParse(type, enumVal, out object result))
-                {
-                    MemInfo.SetValue(Obj, result);
-                }
-
-                GetDropdownValue(dropdown);
-            });
+            return;
         }
+
+        Reflektor.PropertyChangedEvent += evtObj =>
+        {
+            if (evtObj == Obj)
+            {
+                SetFieldValue();
+            }
+        };
+        _dropdownField.RegisterValueChangedCallback(evt =>
+        {
+            string enumVal = evt.newValue.StripHtml();
+            if (Enum.TryParse(type, enumVal, out object result))
+            {
+                MemInfo.SetValue(Obj, result);
+            }
+
+            Reflektor.FirePropertyChangedEvent(Obj);
+        });
     }
 
-    private void GetDropdownValue(DropdownField dropdown)
+    private void SetFieldValue()
     {
         string? val = MemInfo.GetValue(Obj)?.ToString();
-        dropdown.SetValueWithoutNotify(val.SetEnabledColor(_hasSetMethod));
+        _dropdownField.SetValueWithoutNotify(val.SetEnabledColor(_hasSetMethod));
+    }
+
+    private void SetStyle()
+    {
+        Utils.DropdownFix(_dropdownField);
+        _dropdownField.style.width = Length.Percent(25);
+        _dropdownField.style.color = Color.white;
     }
 }
