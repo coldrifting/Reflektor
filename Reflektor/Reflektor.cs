@@ -63,8 +63,6 @@ public class Reflektor : BaseSpaceWarpPlugin
                 IsMovingEnabled = true
             }
         };
-        WindowOptions winOptionsBrowser = winOptions;
-        winOptionsBrowser.WindowId += "_Browser";
 
         _inspector = new Inspector();
         UIDocument inspectorWindow = Window.Create(winOptions, _inspector);
@@ -72,7 +70,9 @@ public class Reflektor : BaseSpaceWarpPlugin
         VisualTreeAsset? browserWindowUxml = AssetManager.GetAsset<VisualTreeAsset>(
             $"{UxmlAssetPath}/BrowserWindow.uxml");
         
-        UIDocument browserWindow = Window.Create(winOptions, browserWindowUxml);
+        WindowOptions winOptionsBrowser = winOptions;
+        winOptionsBrowser.WindowId += "_Browser";
+        UIDocument browserWindow = Window.Create(winOptionsBrowser, browserWindowUxml);
         _browser = new Browser(browserWindow.rootVisualElement, _inspector);
 
         inspectorWindow.rootVisualElement.RegisterCallback((MouseDownEvent _) =>

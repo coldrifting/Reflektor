@@ -45,10 +45,6 @@ public class BrowserObjects
         _sceneChangeDropdown.RegisterValueChangedCallback(_ => _browser.Current = null);
         
         _sceneChangeDropdown.value = _sceneChangeDropdown.choices.Last();
-        _sceneChangeDropdown.RegisterCallback((MouseDownEvent _) =>
-        {
-            // TODO - Style dropdown here?
-        });
         
         _upBtn.clicked += _browser.Up;
         _refreshBtn.clicked += UpdateObjects;
