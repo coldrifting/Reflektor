@@ -42,7 +42,7 @@ public class BrowserObjects
         {
             _sceneChangeDropdown.choices.Add(scene.name);
         }
-        _sceneChangeDropdown.RegisterValueChangedCallback(_ => _browser.Current = null);
+        _sceneChangeDropdown.RegisterValueChangedCallback(_ => _browser.Refresh(null));
         
         _sceneChangeDropdown.value = _sceneChangeDropdown.choices.Last();
         
@@ -70,7 +70,7 @@ public class BrowserObjects
             label.style.color = gObj.activeSelf ? Color.white : Color.grey;
             
             // Right click to disable game objects
-            label.RegisterCallback((MouseDownEvent evt) =>
+            label.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 1 && Browser.CanDisable(gObj.name))
                 {
@@ -82,7 +82,7 @@ public class BrowserObjects
         
         // This event must be set for the items chosen one to work
         _objectList.selectedIndicesChanged += _ => { };
-        _objectList.itemsChosen += enumerable => _browser.Current = enumerable.First() as GameObject;
+        _objectList.itemsChosen += enumerable => _browser.Refresh(enumerable.First() as GameObject);
         
         _browser.CurrentChangedEvent += UpdateObjects;
     }

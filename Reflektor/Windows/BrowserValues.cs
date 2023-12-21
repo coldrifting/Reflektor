@@ -57,7 +57,7 @@ public class BrowserValues
             switch (textField.name)
             {
                 case LabelPos:
-                    textField.labelElement.RegisterCallback((MouseDownEvent evt) =>
+                    textField.labelElement.RegisterCallback<MouseDownEvent>(evt =>
                     {
                         if (evt.button != 1)
                         {
@@ -115,7 +115,7 @@ public class BrowserValues
         };
         
         // View game object on right click of component list
-        _componentList.RegisterCallback((MouseDownEvent evt) =>
+        _componentList.RegisterCallback<MouseDownEvent>(evt =>
         {
             if (evt.button != 1)
             {
@@ -167,7 +167,6 @@ public class BrowserValues
         
         Reflektor.PropertyChangedEvent += propObj =>
         {
-            Reflektor.Log("Prop Changed Event: TextField");
             if (propObj is not GameObject propObjG || propObjG != _browser.Current)
             {
                 return;
@@ -292,5 +291,21 @@ public class BrowserValues
 
                 break;
         }
+    }
+
+    public void Disable()
+    {
+        foreach (var t in _inputs)
+        {
+            t.SetEnabled(false);
+        }
+
+        _activeToggle.SetEnabled(false);
+        _componentList.SetEnabled(false);
+    }
+
+    public void Enable()
+    {
+        _componentList.SetEnabled(true);
     }
 }

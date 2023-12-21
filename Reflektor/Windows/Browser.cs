@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using RTG;
 using UitkForKsp2.API;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -14,75 +16,149 @@ public class Browser
     // GUI Elements
     private readonly VisualElement _root;
     private readonly TextField _path;
+    private readonly Toggle _parentEditToggle;
+    
+    private readonly VisualElement? _objectPane;
+    private readonly VisualElement? _raycastPane;
+    private readonly Button _raycastBackBtn;
+    private readonly ListView _raycastList;
     
     // Data
-    private GameObject? _current;
-    public GameObject? Current
-    {
-        get => _current;
-        set
-        {
-            _current = value;
+    public GameObject? Current { get; private set; }
+    private readonly List<GameObject> _raycastObjects = new();
 
-            _oldPath = value != null ? value.GetPath() : "/";
-            _path.SetValueWithoutNotify(_oldPath);
-            SetPathFontSize();
-            
-            CurrentChangedEvent?.Invoke(value);
-        }
-    }
-    private readonly BrowserRaycast _browserRaycast;
-    private string _oldPath = "/";
+    private readonly BrowserValues _browserValues;
+    
+    private bool _isParentEditMode;
 
     public Browser(VisualElement root, Inspector inspector)
     {
         _root = root;
-        _path = root.Q<TextField>(name: "PathInput");
-        _path.isDelayed = false;
+            
+        _path = _root.Q<TextField>(name: "PathInput");
         _path.RegisterValueChangedCallback(evt =>
         {
-            SetPathFontSize();
-        });
-        
-        _path.RegisterCallback((FocusOutEvent evt) =>
-        {
-            if (evt.target is TextField text)
-            {
-                string newPath = text.text;
-                FindGameObject(newPath);
-            }
+            FindGameObject(Regex.Replace(evt.newValue, @"\r\n?|\n", "").Replace("\t", ""));
         });
 
-        _browserRaycast = new BrowserRaycast(this, root);
-        _browserRaycast.Setup();
+        _parentEditToggle = _root.Q<Toggle>(name: "EditParentToggle");
+        _parentEditToggle.SetEnabled(false);
+        _parentEditToggle.RegisterValueChangedCallback(evt =>
+        {
+            if (Current is null)
+            {
+                _isParentEditMode = false;
+                _parentEditToggle.SetValueWithoutNotify(false);
+                return;
+            }
+            
+            _isParentEditMode = evt.newValue;
+            if (_isParentEditMode)
+            {
+                _path.SetValueWithoutNotify(Current.transform.parent is null
+                    ? "... No Parent ..."
+                    : Current.transform.parent.gameObject.GetPath());
+            }
+            else
+            {
+                Refresh();
+            }
+        });
         
         var browserObjects = new BrowserObjects(this, root);
         browserObjects.Setup();
         
-        var browserValues = new BrowserValues(this, root, inspector);
-        browserValues.Setup();
+        _browserValues = new BrowserValues(this, root, inspector);
+        _browserValues.Setup();
+        
+        // Setup raycast
+        _raycastBackBtn = _root.Q<Button>(name: "RaycastBackBtn");
+        _raycastList = _root.Q<ListView>(name: "RaycastList");
+        _objectPane = _root.Q<VisualElement>(name: "ObjectPane");
+        _raycastPane = _root.Q<VisualElement>(name: "RaycastPane");
+
+        _raycastBackBtn.clicked += Refresh;
+        _raycastList.itemsSource = _raycastObjects;
+        _raycastList.makeItem = () => new Label();
+        _raycastList.bindItem = (element, i) =>
+        {
+            if (element is not Label label)
+            {
+                return;
+            }
+
+            label.text = _raycastObjects[i].name.ToString();
+            label.RegisterCallback<MouseDownEvent>(_ =>
+            {
+                Refresh(_raycastObjects[i]);
+            });
+        };
     }
 
     private void FindGameObject(string newPath)
     {
-        GameObject? candidate = GameObject.Find(newPath);
-        if (candidate is null)
+        if (_isParentEditMode && Current is not null && newPath == "/")
         {
-            _path.SetValueWithoutNotify(_oldPath);
-            SetPathFontSize();
+            Current.transform.parent = null;
+            _isParentEditMode = false;
+            _parentEditToggle.SetValueWithoutNotify(false);
+            Refresh();
         }
         else
         {
-            _browserRaycast.HideRaycastResults();
-            Current = candidate;
-            _oldPath = newPath;
+            GameObject? candidate = GameObject.Find(newPath.RemoveTrailingSlashes());
+            if (candidate is null)
+            {
+                if (_isParentEditMode)
+                {
+                    _isParentEditMode = false;
+                    _parentEditToggle.SetValueWithoutNotify(false);
+                }
+                Refresh();
+            }
+            else
+            {
+                if (_isParentEditMode && Current is not null)
+                {
+                    Current.transform.parent = candidate.transform;
+                    _isParentEditMode = false;
+                    _parentEditToggle.SetValueWithoutNotify(false);
+
+                    Refresh();
+                }
+                else
+                {
+                    Refresh(candidate);
+                }
+            }
         }
     }
-
-    private void SetPathFontSize()
+    
+    public void Refresh(GameObject? newGameObject)
     {
-        float divisor = Math.Max(1.0f, _path.value.Length / 75.0f);
-        _path.style.fontSize = Math.Max(14 / divisor, 9);
+        Current = newGameObject;
+        Refresh();
+    }
+    
+    public void Refresh()
+    {
+        
+        HideRaycastResults();
+        
+        _path.SetValueWithoutNotify(Current != null ? Current.GetPath() : "/");
+
+        _isParentEditMode = false;
+        _parentEditToggle.SetValueWithoutNotify(false);
+        _parentEditToggle.SetEnabled(Current is not null);
+            
+        CurrentChangedEvent?.Invoke(Current);
+    }
+
+    public void Up()
+    {
+        Refresh(Current != null && Current.transform.parent != null
+                ? Current.transform.parent.gameObject
+                : null);
     }
 
     public void ToggleDisplay()
@@ -90,22 +166,34 @@ public class Browser
         _root.ToggleDisplay();
     }
 
-    public void Refresh()
-    {
-        Current = Current;
-    }
-
-    public void Up()
-    {
-        Current = Current != null && Current.transform.parent != null 
-            ? Current.transform.parent.gameObject 
-            : null;
-    }
-
     public void ShowRaycastResults(IEnumerable<GameObject> objects)
     {
+        _path.SetEnabled(false);
         _root.Show();
-        _browserRaycast.ShowRaycastResults(objects);
+        _raycastPane.Show();
+        _objectPane.Hide();
+        _browserValues.Disable();
+        _parentEditToggle.SetEnabled(false);
+        
+        _raycastObjects.Clear();
+        _raycastObjects.AddRange(objects);
+
+        _raycastList.Rebuild();
+        Utils.SetListViewEmptyText(_raycastList, "(No Objects Found)", "#FF7700");
+    }
+
+    private void HideRaycastResults()
+    {
+        if (_raycastPane is null || _objectPane is null)
+        {
+            return;
+        }
+        
+        _browserValues.Enable();
+        _parentEditToggle.SetEnabled(true);
+        _path.SetEnabled(true);
+        _raycastPane.Hide();
+        _objectPane.Show();
     }
     
     public static bool CanDisable(string name)

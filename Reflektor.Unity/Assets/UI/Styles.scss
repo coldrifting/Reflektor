@@ -44,6 +44,9 @@ TextField {
 		border-radius: 6px;
 		.unity-text-element {
 			padding-left: 2px;
+			min-width: 100%;
+			max-width: 100%;
+			white-space: normal;
 		}
 	}
 }
@@ -99,8 +102,7 @@ ListView {
 }
 
 #PathInput {
-	height: 38px;
-	font-size: 14px;
+	font-size: 13px;
 }
 
 #Splitter {
