@@ -95,6 +95,55 @@ public static class Utils
     }
     
     // String validation
+    public static bool TryParse(string value, out Color output)
+    {
+        string[] values = value.Split(new[]{',', ' '}, StringSplitOptions.RemoveEmptyEntries);
+        switch (values.Length)
+        {
+            case >= 4:
+            {
+                if (float.TryParse(values[0], out float r))
+                {
+                    if (float.TryParse(values[1], out float g))
+                    {
+                        if (float.TryParse(values[2], out float b))
+                        {
+                            if (float.TryParse(values[3], out float a))
+                            {
+                                output = new Color(r, g, b, a);
+                                return true;
+                            }
+                        }
+                    }
+                }
+
+                break;
+            }
+            case >= 3:
+            {
+                if (float.TryParse(values[0], out float r))
+                {
+                    if (float.TryParse(values[1], out float g))
+                    {
+                        if (float.TryParse(values[2], out float b))
+                        {
+                            output = new Color(r, g, b, 1.0f);
+                            return true;
+                        }
+                    }
+                }
+
+                break;
+            }
+            case 1 when float.TryParse(values[0], out float c):
+                output = new Color(c, c, c, 1.0f);
+                return true;
+        }
+
+        output = new Color(0, 0, 0, 0);
+        return false;
+    }
+    
     public static bool TryParse(string value, out Quaternion output)
     {
         if (TryParse(value, out Vector4 outVec))
@@ -194,6 +243,11 @@ public static class Utils
 
         output = Vector3.zero;
         return false;
+    }
+    
+    public static string ToSimpleString(Color color)
+    {
+        return $"{color.r} {color.g} {color.b} {color.a}";
     }
     
     public static string ToSimpleString(Vector2 vec)

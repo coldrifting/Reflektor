@@ -4,6 +4,14 @@ using UnityEngine;
 
 namespace Reflektor.Elements;
 
+public class ElementColor : BaseElementText<Color>
+{
+    public ElementColor(object obj, MemberInfo memberInfo) : 
+        base(obj, memberInfo, Utils.TryParse, Utils.ToSimpleString)
+    {
+    }
+}
+
 public class ElementQuaternion : BaseElementText<Quaternion>
 {
     public ElementQuaternion(object obj, MemberInfo memberInfo) : 

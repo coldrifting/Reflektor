@@ -89,6 +89,7 @@ public class InspectorTab : VisualElement
             Vector3 => new ElementVector3(obj, memberInfo),
             Vector4 => new ElementVector4(obj, memberInfo),
             Quaternion => new ElementQuaternion(obj, memberInfo),
+            Color => new ElementColor(obj, memberInfo),
             _ => new ElementObject(obj, memberInfo)
         };
         return x;
