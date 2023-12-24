@@ -93,8 +93,9 @@ public class Inspector : BaseWindow
         
         // Add Default Tabs
         _tabBar.Clear();
-        SwitchTab(GameObject.Find("/GameManager"));
-        SwitchTab(new TestClass());
+        Window.Hide();
+        //SwitchTab(GameObject.Find("/GameManager"));
+        //SwitchTab(new TestClass());
     }
 
     private void ToggleFlag(DisplayFlags flag, bool shouldSet)
@@ -218,6 +219,10 @@ public class Inspector : BaseWindow
                     {
                         element = new ElementEnum(obj, memberInfo);
                     }
+                    else if (memberType.IsArray)
+                    {
+                        element = new ElementCollection(obj, memberInfo, true);
+                    }
                     else if (memberType.IsGenericList())
                     {
                         element = new ElementCollection(obj, memberInfo);
@@ -287,6 +292,8 @@ public class TestClass
     private List<int> intList { get; set; } = new();
     private readonly List<float> _floatList = new();
     private readonly List<string> _stringList = new();
+
+    private string[] values = new string[] { "A", "KSP 2", "test" };
 
     private bool val = true;
     

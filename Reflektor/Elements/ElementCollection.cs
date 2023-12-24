@@ -7,7 +7,7 @@ namespace Reflektor.Elements;
 
 public class ElementCollection : BaseElement
 {
-    public ElementCollection(object obj, MemberInfo memberInfo) : base(obj, memberInfo)
+    public ElementCollection(object obj, MemberInfo memberInfo, bool isArray = false) : base(obj, memberInfo)
     {
         Label l = new Label(memberInfo.Name);
         ListView list = new();
