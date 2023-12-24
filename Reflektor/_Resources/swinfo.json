@@ -7,14 +7,14 @@
   "source": "https://github.com/coldrifting/Reflektor",
   "version": "0.1.0.0",
   "ksp2_version": {
-    "min": "0.1.5",
+    "min": "0.2.0",
     "max": "*"
   },
   "dependencies": [
     {
       "id": "com.github.x606.spacewarp",
       "version": {
-        "min": "1.6.0",
+        "min": "1.7.0",
         "max": "*"
       }
     },
