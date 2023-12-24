@@ -1,172 +1,111 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+using System.Reflection;
+using Reflektor.Elements;
 using UitkForKsp2.API;
+using UniLinq;
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Runtime.CompilerServices;
 
 namespace Reflektor.Windows;
 
-public class Inspector : VisualElement
+public class Inspector : BaseWindow
 {
     // GUI Elements
-    private readonly TextField _path = new();
-    private readonly GroupBox _tabBar = new();
-    private readonly ScrollView _tabScrollView = new(ScrollViewMode.Horizontal);
+    private readonly VisualElement _tabBar;
+    private readonly TextField _pathInput;
+    
+    private readonly TextField _searchInput;
+    private readonly Toggle _propertyToggle;
+    private readonly Toggle _fieldToggle;
+    private readonly Toggle _methodToggle;
+    private readonly Toggle _readOnlyToggle;
+    
+    private readonly Toggle _autoRefreshToggle;
+    private readonly Button _refreshButton;
+    
+    private readonly ScrollView _inspectorContent;
 
     // Data
-    private object? _currentObject;
-    private object? _prevObject;
-
-    private readonly Dictionary<object, (int, Button, InspectorTab)> _tabs = new();
+    private readonly Dictionary<object, (VisualElement, List<BaseElement>)> _tabs = new();
+    private DisplayFlags _flags = DisplayFlags.All;
     
-    public Inspector()
+    private object? _current;
+    private object? Current
     {
-        _path.isDelayed = true;
-        _path.RegisterValueChangedCallback(evt =>
+        get => _current;
+        set
+        {
+            _current = value;
+            GetPathString();
+        }
+    }
+
+
+    public Inspector(GameObject parent) : base(parent, "InspectorWindow")
+    {
+        // Find GUI elements
+        _tabBar = Window.rootVisualElement.Q<VisualElement>(name: "TabBar");
+        _pathInput = Window.rootVisualElement.Q<TextField>(name: "PathInput");
+        
+        _searchInput = Window.rootVisualElement.Q<TextField>(name: "SearchInput");
+        
+        _propertyToggle = Window.rootVisualElement.Q<Toggle>(name: "PropertyToggle");
+        _fieldToggle = Window.rootVisualElement.Q<Toggle>(name: "FieldToggle");
+        _methodToggle = Window.rootVisualElement.Q<Toggle>(name: "MethodToggle");
+        _readOnlyToggle = Window.rootVisualElement.Q<Toggle>(name: "ReadOnlyToggle");
+        
+        _autoRefreshToggle = Window.rootVisualElement.Q<Toggle>(name: "AutoRefreshToggle");
+        _refreshButton = Window.rootVisualElement.Q<Button>(name: "RefreshButton");
+
+        _inspectorContent = Window.rootVisualElement.Q<ScrollView>(name: "InspectorContent");
+
+        // Add callbacks
+        _pathInput.RegisterValueChangedCallback(evt =>
         {
             string[] fullPath = evt.newValue.Split("|", 2);
             GameObject? candidate = GameObject.Find(fullPath.First());
+            Reflektor.Log("Find");
             if (candidate is not null)
             {
+                Reflektor.Log("Find Not Null");
                 string compTargetType = fullPath.Last().Trim();
-                if (TryGetCompByName(candidate, compTargetType, out Component? comp))
-                {
-                    if (comp is not null)
-                    {
-                        SwitchTab(comp);
-                    }
-                }
-                else
-                {
-                    SwitchTab(candidate);
-                }
+                Component? comp = candidate.GetComponentByType(compTargetType);
+                SwitchTab(comp != null ? comp : candidate);
             }
-            
-            string path = _currentObject switch
-            {
-                GameObject g => g.GetPath(),
-                Component c => c.gameObject.GetPath(),
-                _ => "/"
-            };
 
-            _path.SetValueWithoutNotify(path);
+            GetPathString();
         });
-        
-        SetStyle();
 
-        Add(_path);
-        Add(_tabScrollView);
-        
-        _tabScrollView.Add(_tabBar);
-
-        /*
-        try
+        _searchInput.RegisterValueChangedCallback(evt =>
         {
-            AddTab(new TestClass());
-            GameObject g = GameObject.Find("/GameManager/Default Game Instance(Clone)/UI Manager(Clone)/Main Canvas");
-            if (g is null)
-            {
-                return;
-            }
+            UpdateDisplay();
+        });
 
-            AddTab(g);
-            RectTransform r = g.GetComponent<RectTransform>();
-            if (r is not null)
-            {
-                AddTab(r);
-            }
-                
-            Canvas c = g.GetComponent<Canvas>();
-            if (c is not null)
-            {
-                AddTab(c);
-            }
-                
-            SwitchTab(g);
-        }
-        catch (Exception e)
-        {
-            Reflektor.Log(e.ToString());
-            Reflektor.Log(e.Message);
-            Reflektor.Log(e.StackTrace);
-        }
-        */
+        _propertyToggle.RegisterValueChangedCallback(evt => ToggleFlag(DisplayFlags.Properties, evt.newValue));
+        _fieldToggle.RegisterValueChangedCallback(evt => ToggleFlag(DisplayFlags.Fields, evt.newValue));
+        _methodToggle.RegisterValueChangedCallback(evt => ToggleFlag(DisplayFlags.Methods, evt.newValue));
+        _readOnlyToggle.RegisterValueChangedCallback(evt => ToggleFlag(DisplayFlags.ReadOnly, evt.newValue));
+
+        _refreshButton.clicked += UpdateDisplay;
         
-        this.Hide();
+        // Add Default Tabs
+        _tabBar.Clear();
+        SwitchTab(GameObject.Find("/GameManager"));
+        SwitchTab(new TestClass());
     }
 
-    private static bool TryGetCompByName(GameObject candidate, string compTargetType, out Component? comp)
+    private void ToggleFlag(DisplayFlags flag, bool shouldSet)
     {
-        foreach (Component c in candidate.GetComponents<Component>())
-        {
-            string curType = c.GetType().ToString().Split(".").Last().Trim();
-            if (!string.Equals(compTargetType, curType, StringComparison.CurrentCultureIgnoreCase))
-            {
-                continue;
-            }
-
-            comp = c;
-            return true;
-        }
-
-        comp = null;
-        return false;
-    }
-
-    public void SwitchTab(object obj)
-    {
-        this.Show();
-        AddTab(obj);
+        Reflektor.Log($"{flag}, {shouldSet}");
         
-        _prevObject = _currentObject;
-
-        foreach ((int id, Button b, InspectorTab t) in _tabs.Values)
-        {
-            b.style.backgroundColor = id % 2 == 0 
-                ? new Color(0.3f, 0.3f, 0.3f) 
-                : new Color(0.4f, 0.4f, 0.4f);
-            
-            t.Hide();
-        }
-
-        (_, Button curBtn, InspectorTab curTab) = _tabs[obj];
-        curTab.Show();
-        curBtn.style.backgroundColor = new Color(0.05f, 0.45f, 0.35f);
-        curBtn.style.color = Color.white;
+        _flags = shouldSet ? _flags | flag : _flags & ~flag;
         
-        _currentObject = obj;
-
-        Reflektor.FirePropertyChangedEvent(_currentObject);
-    }
-
-    private void UpdateTabButtonStyles()
-    {
-        foreach ((int id, Button b, InspectorTab _) in _tabs.Values)
-        {
-            if (id == 0)
-            {
-                b.style.borderTopLeftRadius = 6;
-                b.style.borderBottomLeftRadius = 6;
-            }
-            else
-            {
-                b.style.borderTopLeftRadius = 0;
-                b.style.borderBottomLeftRadius = 0;
-            }
-
-            if (id == _tabs.Count - 1)
-            {
-                b.style.borderTopRightRadius = 6;
-                b.style.borderBottomRightRadius = 6;
-            }
-            else
-            {
-                b.style.borderTopRightRadius = 0;
-                b.style.borderBottomRightRadius = 0;
-            }
-        }
+        Reflektor.Log(_flags);
+        
+        UpdateDisplay();
     }
 
     private void AddTab(object obj)
@@ -175,105 +114,169 @@ public class Inspector : VisualElement
         {
             return;
         }
+        
+        Label b = new(obj.GetTabName());
+        Button close = new(() => CloseTab(obj));
+        close.text = "\u2717"; // Close Icon
 
-        InspectorTab tabPane = new(obj);
-        Button tabButton = new();
-        tabButton.text = obj.GetShortName(true);
-        tabButton.clicked += () => { SwitchTab(obj); };
-        tabButton.RegisterCallback((MouseDownEvent evt) =>
+        VisualElement tab = new();
+        tab.RegisterCallback((MouseDownEvent _) => SwitchTab(obj));
+        tab.Add(b);
+        tab.Add(close);
+
+        List<BaseElement> elements = GetElements(obj);
+        _tabs[obj] = (tab, elements);
+        _tabBar.Add(tab);
+        foreach (BaseElement? e in elements)
         {
-            if (evt.button == 1)
-            {
-                CloseTab(obj);
-            }
-        });
+            _inspectorContent.Add(e);
+        }
+    }
+
+    public void SwitchTab(object obj)
+    {
+        if (Current is not null)
+        {
+            _tabs[Current].Item1.RemoveFromClassList("focused");
+        }
         
-        _tabs[obj] = (_tabs.Count, tabButton, tabPane);
-        _tabBar.Add(tabButton);
-        Add(tabPane);
+        Current = obj;
         
-        UpdateTabButtonStyles();
+        Window.Show();
+        AddTab(obj);
+        UpdateDisplay();
+
+        _tabs[obj].Item1.AddToClassList("focused");
     }
 
     private void CloseTab(object obj)
     {
-        (_, Button curBtn, InspectorTab curTab) = _tabs[obj];
-
-        _tabBar.Remove(curBtn);
-        _tabs.Remove(obj);
-        Remove(curTab);
+        if (obj == Current)
+        {
+            Current = null;
+        }
         
-        _tabs.Reorder();
-    
-        UpdateTabButtonStyles();
-
-        if (obj == _prevObject)
+        _tabBar.Remove(_tabs[obj].Item1);
+        foreach (BaseElement v in _tabs[obj].Item2)
         {
-            _prevObject = null;
+            _inspectorContent.Remove(v);
         }
 
-        if (obj == _currentObject)
-        {
-            _currentObject = null;
-        }
-
-        if (_prevObject is not null)
-        {
-            SwitchTab(_prevObject);
-            return;
-        }
-
+        _tabs.Remove(obj);
+        
         if (_tabs.Count > 0)
         {
             SwitchTab(_tabs.Keys.First());
         }
         else
         {
-            // No more tabs left
-            this.Hide();
+            Window.Hide();
         }
     }
 
-    private void SetStyle()
+    private void UpdateDisplay()
     {
-        AddToClassList("root");
-        
-        style.position = Position.Absolute;
-        style.width = 1500;
-        style.minWidth = 1200;
-        style.maxWidth = 1200;
-        style.height = 900;
-        style.minHeight = 900;
-        style.maxHeight = 900;
-
-        _path.style.fontSize = 12;
-        foreach (VisualElement v in _path.Children())
+        foreach ((object obj, (VisualElement _, List<BaseElement> el)) in _tabs)
         {
-            v.style.borderTopLeftRadius = 6;
-            v.style.borderTopRightRadius = 6;
-            v.style.borderBottomLeftRadius = 6;
-            v.style.borderBottomRightRadius = 6;
+            foreach (var b in el)
+            {
+                b.RefreshDisplay(obj == Current && b.GetName().Contains(_searchInput.value, StringComparison.InvariantCultureIgnoreCase)? _flags : DisplayFlags.None);
+            }
+        }
+    }
+
+    private static List<BaseElement> GetElements(object obj)
+    {
+        List<BaseElement> output = new();
+        
+        int counter = 0;
+
+        List<MemberInfo> members = new();
+        members.AddRange(obj.GetType().GetAllProperties().Where(IgnoreCompilerAttributes));
+        members.AddRange(obj.GetType().GetAllFields().Where(IgnoreCompilerAttributes));
+        members.AddRange(obj.GetType().GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(IgnoreCompilerAttributes).Where(m => !m.IsSpecialName));
+
+        foreach (MemberInfo memberInfo in members)
+        {
+            try
+            {
+                BaseElement element;
+
+                if (memberInfo is MethodInfo methodInfo)
+                {
+                    element = new ElementMethod(obj, methodInfo);
+                }
+                else
+                {
+                    object? memberObj = memberInfo.GetValue(obj);
+                    if (memberObj is null)
+                    {
+                        continue;
+                    }
+                    Type memberType = memberObj.GetType();
+                    if (memberType.IsEnum)
+                    {
+                        element = new ElementEnum(obj, memberInfo);
+                    }
+                    else if (memberType.IsGenericList())
+                    {
+                        element = new ElementCollection(obj, memberInfo);
+                    }
+                    else
+                    {
+                        element = GetElement(obj, memberInfo);
+                    }
+                }
+
+                element.style.backgroundColor = counter++ % 2 == 0
+                    ? new Color(0, 0, 0, 0.1f)
+                    : new Color(0, 0, 0, 0);
+                
+                output.Add(element);
+            }
+            catch (Exception)
+            {
+                Reflektor.Log($"Could not add the element {memberInfo.Name}");
+            }
         }
 
-        _tabScrollView.style.backgroundColor = new StyleColor(StyleKeyword.None);
-        _tabScrollView.style.flexDirection = FlexDirection.Row;
-        _tabScrollView.style.maxHeight = 44;
-        _tabScrollView.style.minHeight = 44;
-        _tabScrollView.style.height = 44;
-        _tabScrollView.style.paddingLeft = 0;
-        _tabScrollView.style.paddingRight = 0;
-        _tabScrollView.style.paddingBottom = 0;
-        _tabScrollView.style.paddingTop = 0;
-        _tabScrollView.style.marginLeft = 0;
-        _tabScrollView.style.marginRight = 0;
-        _tabScrollView.style.marginBottom = 0;
-        _tabScrollView.style.marginTop = 0;
-        _tabBar.style.paddingLeft = 0;
-        _tabBar.style.paddingRight = 0;
-        _tabBar.style.paddingBottom = 0;
-        _tabBar.style.paddingTop = 0;
-        
-        _tabBar.style.flexDirection = new StyleEnum<FlexDirection>(FlexDirection.Row);
+        return output;
+    }
+
+    private static bool IgnoreCompilerAttributes(MemberInfo m)
+    {
+        return m.GetCustomAttribute<CompilerGeneratedAttribute>() == null;
+    }
+
+    private static BaseElement GetElement(object obj, MemberInfo memberInfo)
+    {
+        BaseElement x = memberInfo.GetValue(obj) switch
+        {
+            int => new ElementInt(obj, memberInfo),
+            float => new ElementFloat(obj, memberInfo),
+            double => new ElementDouble(obj, memberInfo),
+            bool => new ElementBool(obj, memberInfo),
+            string => new ElementString(obj, memberInfo),
+            Vector2 => new ElementVector2(obj, memberInfo),
+            Vector3 => new ElementVector3(obj, memberInfo),
+            Vector4 => new ElementVector4(obj, memberInfo),
+            Quaternion => new ElementQuaternion(obj, memberInfo),
+            Color => new ElementColor(obj, memberInfo),
+            _ => new ElementObject(obj, memberInfo)
+        };
+        return x;
+    }
+
+    private void GetPathString()
+    {
+        string path = Current switch
+        {
+            null => "null",
+            Component c => $"{c.gameObject.GetPath()}|{c.GetType().Name}",
+            GameObject g => g.GetPath(),
+            _ => Current.ToString(),
+        };
+        _pathInput.SetValueWithoutNotify(path);
     }
 }
 
@@ -284,6 +287,8 @@ public class TestClass
     private List<int> intList { get; set; } = new();
     private readonly List<float> _floatList = new();
     private readonly List<string> _stringList = new();
+
+    private bool val = true;
     
     public TestClass()
     {
@@ -298,5 +303,20 @@ public class TestClass
         _stringList.Add("B");
         _stringList.Add("C");
         _stringList.Add("D");
+    }
+
+    private static bool StaticBoolFalseMethod()
+    {
+        return false;
+    }
+    
+    private bool InstanceBoolTrueMethod()
+    {
+        return val;
+    }
+    
+    public void InstanceVoidMethod()
+    {
+        Debug.Log("Nothing to see here...");
     }
 }

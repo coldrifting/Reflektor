@@ -14,10 +14,10 @@ public class ElementBool : BaseElement
         Add(_toggle);
 
         // Initial Value
-        SetFieldValue();
+        SetToggle();
         
         // Read only and change callbacks
-        bool enabled = MemInfo.HasSetMethod() && !Obj.GetType().IsStruct();
+        bool enabled = !(MemInfo.IsReadOnly() || Obj.GetType().IsStruct());
         _toggle.SetEnabled(enabled);
 
         Reflektor.PropertyChangedEvent += evtObj =>
@@ -34,12 +34,17 @@ public class ElementBool : BaseElement
         });
     }
 
-    private void SetFieldValue()
+    protected override void SetFieldValue()
     {
         if (MemInfo.GetValue(Obj) is bool boolVal)
         {
             _toggle.SetValueWithoutNotify(boolVal);
         }
+    }
+
+    private void SetToggle()
+    {
+        SetFieldValue();
     }
 
     private void SetStyle()

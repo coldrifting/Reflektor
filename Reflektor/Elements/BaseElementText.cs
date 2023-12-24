@@ -8,16 +8,16 @@ namespace Reflektor.Elements;
 public class BaseElementText<T> : BaseElement
 {
     private readonly TextField _textField = new();
-    private readonly Func<T, string> _normalizer;
+    protected readonly Func<T, string> Normalizer;
 
     protected delegate bool Validator<TX>(string value, out TX output);
 
     protected BaseElementText(object obj, MemberInfo memInfo, Validator<T> validator,
         Func<T, string> normalizer) : base(obj, memInfo)
     {
-        _normalizer = normalizer;
+        Normalizer = normalizer;
         _textField.isDelayed = true;
-        SetFieldValue();
+        SetValue();
         SetStyle();
         Add(_textField);
 
@@ -27,7 +27,12 @@ public class BaseElementText<T> : BaseElement
             _textField.style.color = Color.magenta;
         }
 
-        if (MemInfo.HasSetMethod() && !Obj.GetType().IsStruct())
+        if (MemInfo.IsReadOnly() || Obj.GetType().IsStruct())
+        {
+            _textField.isReadOnly = true;
+            _textField.style.color = Color.gray;
+        }
+        else
         {
             Reflektor.PropertyChangedEvent += evtObj =>
             {
@@ -41,11 +46,6 @@ public class BaseElementText<T> : BaseElement
                 SetValue(evt.newValue, validator);
                 Reflektor.FirePropertyChangedEvent(obj);
             });
-        }
-        else
-        {
-            _textField.isReadOnly = true;
-            _textField.style.color = Color.gray;
         }
     }
 
@@ -62,9 +62,14 @@ public class BaseElementText<T> : BaseElement
         }
     }
 
-    private void SetFieldValue()
+    private void SetValue()
     {
-        _textField.value = GetValue(_normalizer);
+        SetFieldValue();
+    }
+
+    protected override void SetFieldValue()
+    {
+        _textField.value = GetValue(Normalizer);
     }
 
     private void SetStyle()

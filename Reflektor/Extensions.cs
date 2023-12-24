@@ -20,9 +20,10 @@ public static class Extensions
         return (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(List<>)));
     }
     
-    public static bool HasSetMethod(this MemberInfo memberInfo) => memberInfo switch
+    public static bool IsReadOnly(this MemberInfo memberInfo) => memberInfo switch
     {
-        PropertyInfo propertyInfo => propertyInfo.GetSetMethod() is not null,
+        PropertyInfo propertyInfo => propertyInfo.GetSetMethod() is null,
+        FieldInfo fieldInfo => fieldInfo is { IsLiteral: true, IsInitOnly: false },
         _ => true
     };
 
@@ -30,8 +31,33 @@ public static class Extensions
     {
         PropertyInfo propertyInfo => propertyInfo.Name,
         FieldInfo fieldInfo => fieldInfo.Name,
+        MethodInfo methodInfo => GetMethodFullName(methodInfo),
         _ => "[n]"
     };
+
+    private static string GetMethodFullName(MethodBase method)
+    {
+        if (method.ReflectedType == null)
+        {
+            return "";
+        }
+        
+        string name = method.Name;
+
+        List<string> parameters = new();
+        foreach (ParameterInfo parameterInfo in method.GetParameters())
+        {
+            string parameter = parameterInfo.ParameterType.Name;
+            if (parameter.EndsWith("&"))
+            {
+                parameter = "<color=#158B2E>ref</color> " + parameter[..^1];
+            }
+
+            parameters.Add($"<color=#4389BB>{parameter}</color>");
+        }
+
+        return name + "(" + string.Join(",", parameters) + ")";
+    }
 
     public static object? GetValue(this MemberInfo memberInfo, object obj) => memberInfo switch
     {
@@ -82,26 +108,32 @@ public static class Extensions
         return t.GetProperties(flags).Concat(GetAllProperties(t.BaseType));
     }
 
-    public static string GetShortName(this object obj, bool addPrefix = false)
+    public static string GetTabName(this object obj)
     {
-        var fullName = obj.GetType().FullName;
-        if (fullName == null)
-        {
-            return "";
-        }
-
-        string shortName = fullName.Split(".").Last();
-        if (!addPrefix)
-        {
-            return shortName;
-        }
-
+        string objType = obj.GetType().Name;
         return obj switch
         {
-            Component => $"[C] {shortName}",
-            GameObject => $"[G] {shortName}",
-            _ => shortName
+            Component c => $"{objType}\r\n{c.name}",
+            GameObject g => $"{objType}\r\n{g.name}",
+            not null => objType,
+            _ => ""
         };
+    }
+    
+    // Flags
+    public static T SetFlags<T>(this T value, T flags, bool on) where T : Enum
+    {    
+        long lValue = Convert.ToInt64(value);
+        long lFlag = Convert.ToInt64(flags);
+        if (on)
+        {
+            lValue |= lFlag;
+        }
+        else
+        {
+            lValue &= (~lFlag);
+        }
+        return (T)Enum.ToObject(typeof(T), lValue);
     }
     
     // Misc

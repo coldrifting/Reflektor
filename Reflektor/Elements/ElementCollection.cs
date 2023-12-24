@@ -62,4 +62,9 @@ public class ElementCollection : BaseElement
             });
         };
     }
+
+    protected override void SetFieldValue()
+    {
+        // TODO
+    }
 }

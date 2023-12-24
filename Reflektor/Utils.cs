@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -28,61 +29,6 @@ public static class Utils
         }
     }
     
-    // Temporary fix for dropdowns
-    public static void DropdownFix(DropdownField dropdownField)
-    {
-        VisualElement? dropdownInput = dropdownField.Query(className: "unity-base-popup-field__input").First();
-        if (dropdownInput is not null)
-        {
-            dropdownInput.style.backgroundColor = Reflektor.ColorFromHex(0x192128);
-            dropdownInput.style.borderBottomColor = Reflektor.ColorFromHex(0x333333);
-            dropdownInput.style.borderTopColor = Reflektor.ColorFromHex(0x333333);
-            dropdownInput.style.borderLeftColor = Reflektor.ColorFromHex(0x333333);
-            dropdownInput.style.borderRightColor = Reflektor.ColorFromHex(0x333333);
-            dropdownInput.style.height = 30;
-            dropdownInput.style.paddingBottom = 0;
-            dropdownInput.style.paddingTop = 0;
-            dropdownInput.style.paddingLeft = 0;
-            dropdownInput.style.paddingRight = 12;
-            dropdownInput.style.marginLeft = 0;
-            dropdownInput.style.marginRight = 0;
-            dropdownInput.style.borderTopLeftRadius = 6;
-            dropdownInput.style.borderTopRightRadius = 6;
-            dropdownInput.style.borderBottomLeftRadius = 6;
-            dropdownInput.style.borderBottomRightRadius = 6;
-            
-            dropdownField.RegisterCallback((MouseEnterEvent evt) =>
-            {
-                dropdownInput.style.backgroundColor = Reflektor.ColorFromHex(0x293138);
-            });
-            
-            dropdownField.RegisterCallback((MouseLeaveEvent evt) =>
-            {
-                dropdownInput.style.backgroundColor = Reflektor.ColorFromHex(0x192128);
-            });
-        }
-        
-        VisualElement? dropdownInputText = dropdownField.Query(className: "unity-base-popup-field__text").First();
-        if (dropdownInputText is not null)
-        {
-            dropdownInputText.style.fontSize = 14;
-            dropdownInputText.style.marginTop = 0;
-            dropdownInputText.style.marginBottom = 0;
-            dropdownInputText.style.paddingTop = 3;
-            dropdownInputText.style.paddingBottom = 3;
-            dropdownInputText.style.paddingLeft = 10;
-            dropdownInputText.style.paddingRight = 10;
-            dropdownInputText.style.color = Color.white;
-            dropdownInputText.style.unityTextAlign = new StyleEnum<TextAnchor>(TextAnchor.MiddleLeft);
-        }
-        
-        VisualElement? dropdownInputArrow = dropdownField.Query(className: "unity-base-popup-field__arrow").First();
-        if (dropdownInputArrow is not null)
-        {
-            dropdownInputArrow.style.unityBackgroundImageTintColor = Reflektor.ColorFromHex(0xC0C7D5);
-        }
-    }
-
     public static void SetListViewEmptyText(ListView? listView, string message, string? hexColor = null)
     {
         VisualElement? emptyText = listView.Query(className: "unity-list-view__empty-label");
@@ -268,5 +214,31 @@ public static class Utils
     public static string ToSimpleString(Quaternion quaternion)
     {
         return $"{quaternion.x} {quaternion.y} {quaternion.z} {quaternion.w}";
+    }
+
+    public static GameObject? GetGameObject(object obj)
+    {
+        return obj switch
+        {
+            GameObject g => g,
+            Component c => c.gameObject,
+            _ => null
+        };
+    }
+    
+    public static Component? GetComponentByType(this GameObject candidate, string compTargetType)
+    {
+        foreach (Component c in candidate.GetComponents<Component>())
+        {
+            string curType = c.GetType().ToString().Split(".").Last().Trim();
+            if (!string.Equals(compTargetType, curType, StringComparison.CurrentCultureIgnoreCase))
+            {
+                continue;
+            }
+
+            return c;
+        }
+
+        return null;
     }
 }

@@ -8,13 +8,12 @@ using UnityEngine.UIElements;
 
 namespace Reflektor.Windows;
 
-public class Browser
+public class Browser : BaseWindow
 {
     // Events
     public event Action<GameObject?>? CurrentChangedEvent;
     
     // GUI Elements
-    private readonly VisualElement _root;
     private readonly TextField _path;
     private readonly Toggle _parentEditToggle;
     
@@ -31,17 +30,22 @@ public class Browser
     
     private bool _isParentEditMode;
 
-    public Browser(VisualElement root, Inspector inspector)
+    public Browser(GameObject parent, Inspector inspector) : base(parent, "BrowserWindow")
     {
-        _root = root;
-            
-        _path = _root.Q<TextField>(name: "PathInput");
+        // Find GUI elements
+        _path = Window.rootVisualElement.Q<TextField>(name: "PathInput");
+        _parentEditToggle = Window.rootVisualElement.Q<Toggle>(name: "EditParentToggle");
+        _raycastBackBtn = Window.rootVisualElement.Q<Button>(name: "RaycastBackBtn");
+        _raycastList = Window.rootVisualElement.Q<ListView>(name: "RaycastList");
+        _objectPane = Window.rootVisualElement.Q<VisualElement>(name: "ObjectPane");
+        _raycastPane = Window.rootVisualElement.Q<VisualElement>(name: "RaycastPane");
+        
+        // Add callbacks
         _path.RegisterValueChangedCallback(evt =>
         {
-            FindGameObject(Regex.Replace(evt.newValue, @"\r\n?|\n", "").Replace("\t", ""));
+            FindGameObject(evt.newValue);
         });
-
-        _parentEditToggle = _root.Q<Toggle>(name: "EditParentToggle");
+        
         _parentEditToggle.SetEnabled(false);
         _parentEditToggle.RegisterValueChangedCallback(evt =>
         {
@@ -65,18 +69,13 @@ public class Browser
             }
         });
         
-        var browserObjects = new BrowserObjects(this, root);
+        var browserObjects = new BrowserObjects(this, Window.rootVisualElement);
         browserObjects.Setup();
         
-        _browserValues = new BrowserValues(this, root, inspector);
+        _browserValues = new BrowserValues(this, Window.rootVisualElement, inspector);
         _browserValues.Setup();
         
         // Setup raycast
-        _raycastBackBtn = _root.Q<Button>(name: "RaycastBackBtn");
-        _raycastList = _root.Q<ListView>(name: "RaycastList");
-        _objectPane = _root.Q<VisualElement>(name: "ObjectPane");
-        _raycastPane = _root.Q<VisualElement>(name: "RaycastPane");
-
         _raycastBackBtn.clicked += Refresh;
         _raycastList.itemsSource = _raycastObjects;
         _raycastList.makeItem = () => new Label();
@@ -142,7 +141,6 @@ public class Browser
     
     public void Refresh()
     {
-        
         HideRaycastResults();
         
         _path.SetValueWithoutNotify(Current != null ? Current.GetPath() : "/");
@@ -163,13 +161,14 @@ public class Browser
 
     public void ToggleDisplay()
     {
-        _root.ToggleDisplay();
+        Window.rootVisualElement.ToggleDisplay();
     }
 
     public void ShowRaycastResults(IEnumerable<GameObject> objects)
     {
+        Window.rootVisualElement.Show();
+        
         _path.SetEnabled(false);
-        _root.Show();
         _raycastPane.Show();
         _objectPane.Hide();
         _browserValues.Disable();
@@ -188,7 +187,7 @@ public class Browser
         {
             return;
         }
-        
+
         _browserValues.Enable();
         _parentEditToggle.SetEnabled(true);
         _path.SetEnabled(true);

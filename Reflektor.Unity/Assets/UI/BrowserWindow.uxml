@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/UI/Styles.scss?fileID=7433441132597879392&amp;guid=272d8a6887c25d448a3f1612c249d9c3&amp;type=3#Styles" />
-    <ui:VisualElement name="VisualElement" tabindex="-1" class="root">
+    <ui:VisualElement name="BrowserWindowRoot" tabindex="-1" class="root">
         <ui:TextField picking-mode="Ignore" is-delayed="true" name="PathInput" password="false" mask-character="A" tabindex="0" />
         <ui:VisualElement name="Splitter" tabindex="-1">
             <ui:VisualElement name="RaycastPane" tabindex="-1">

@@ -30,7 +30,7 @@ public class ElementObject : BaseElement
             _inspectBtn.text = "Inspect";
         }
 
-        SetFieldValue();
+        SetValue();
         SetStyle();
         Add(_inspectBtn);
         Add(labelVal);
@@ -49,16 +49,21 @@ public class ElementObject : BaseElement
         };
     }
 
-    private void SetFieldValue()
+    protected override void SetFieldValue()
     {
         _inspectBtn.SetEnabled(_inspectObj is not null);
         _inspectLabel.text = _inspectObj?.ToString().Split("\n").First().Trim();
     }
 
+    private void SetValue()
+    {
+        SetFieldValue();
+    }
+
     private void SetStyle()
     {
-        _inspectLabel.style.paddingLeft = 20;
         _inspectLabel.style.maxWidth = Length.Percent(40);
+        _inspectLabel.style.paddingLeft = 20;
         _inspectBtn.style.minWidth = Length.Percent(8);
         _inspectBtn.style.height = 24;
         _inspectBtn.style.paddingTop = 2;

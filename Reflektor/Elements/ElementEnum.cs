@@ -23,14 +23,14 @@ public class ElementEnum : BaseElement
         SetStyle();
         Add(_dropdownField);
         
-        _hasSetMethod = MemInfo.HasSetMethod();
+        _hasSetMethod = !MemInfo.IsReadOnly();
 
         // Set values
         foreach (object? val in Enum.GetValues(type))
         {
             _dropdownField.choices.Add(val.SetEnabledColor(_hasSetMethod));
         }
-        SetFieldValue();
+        SetValue();
 
         // Setup callbacks
         if (obj.GetType().IsStruct())
@@ -57,15 +57,19 @@ public class ElementEnum : BaseElement
         });
     }
 
-    private void SetFieldValue()
+    protected override void SetFieldValue()
     {
         string? val = MemInfo.GetValue(Obj)?.ToString();
         _dropdownField.SetValueWithoutNotify(val.SetEnabledColor(_hasSetMethod));
     }
 
+    private void SetValue()
+    {
+        SetFieldValue();
+    }
+
     private void SetStyle()
     {
-        Utils.DropdownFix(_dropdownField);
         _dropdownField.style.width = Length.Percent(25);
         _dropdownField.style.color = Color.white;
     }

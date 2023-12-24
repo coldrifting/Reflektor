@@ -8,12 +8,9 @@ using BepInEx.Configuration;
 using JetBrains.Annotations;
 using Reflektor.Windows;
 using SpaceWarp;
-using SpaceWarp.API.Assets;
 using SpaceWarp.API.Mods;
-using UitkForKsp2.API;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UIElements;
 
 namespace Reflektor;
 
@@ -26,7 +23,6 @@ public class Reflektor : BaseSpaceWarpPlugin
     [PublicAPI] public const string ModVer = "0.1.0.0";
 
     private static Reflektor? _instance;
-    private const string UxmlAssetPath = $"{ModGuid}/reflektor_ui/ui";
 
     // Events
     public static event Action<object>? PropertyChangedEvent;
@@ -48,42 +44,11 @@ public class Reflektor : BaseSpaceWarpPlugin
         Log("Initializing");
         _instance = this;
 
-        GameObject rootGameObject = new GameObject("_Inspector");
+        GameObject rootGameObject = new GameObject("_InspectorRoot");
         DontDestroyOnLoad(rootGameObject);
 
-        WindowOptions winOptions = new WindowOptions
-        {
-            WindowId = rootGameObject.name,
-            Parent = rootGameObject.transform,
-            IsHidingEnabled = true,
-            DisableGameInputForTextFields = true,
-            MoveOptions = new MoveOptions()
-            {
-                CheckScreenBounds = false,
-                IsMovingEnabled = true
-            }
-        };
-
-        _inspector = new Inspector();
-        UIDocument inspectorWindow = Window.Create(winOptions, _inspector);
-        
-        VisualTreeAsset? browserWindowUxml = AssetManager.GetAsset<VisualTreeAsset>(
-            $"{UxmlAssetPath}/BrowserWindow.uxml");
-        
-        WindowOptions winOptionsBrowser = winOptions;
-        winOptionsBrowser.WindowId += "_Browser";
-        UIDocument browserWindow = Window.Create(winOptionsBrowser, browserWindowUxml);
-        _browser = new Browser(browserWindow.rootVisualElement, _inspector);
-
-        inspectorWindow.rootVisualElement.RegisterCallback((MouseDownEvent _) =>
-        {
-            inspectorWindow.rootVisualElement.BringToFront();
-        });
-        
-        browserWindow.rootVisualElement.RegisterCallback((MouseDownEvent _) =>
-        {
-            browserWindow.rootVisualElement.BringToFront();
-        });
+        _inspector = new Inspector(rootGameObject);
+        _browser = new Browser(rootGameObject, _inspector);
         
         SpaceWarp.API.Game.Messages.StateChanges.GameStateChanged += (_, _, _) => Utils.ResetSorting();
         SpaceWarp.API.Game.Messages.StateChanges.GameStateChanged += (_, _, _) => RefreshBrowser();
@@ -170,7 +135,7 @@ public class Reflektor : BaseSpaceWarpPlugin
             yield return 0;
         }
         
-        GameObject? g = GetGameObject(obj);
+        GameObject? g = Utils.GetGameObject(obj);
         if (g is not null)
         {
             PropertyChangedEvent?.Invoke(g);
@@ -183,16 +148,6 @@ public class Reflektor : BaseSpaceWarpPlugin
         {
             PropertyChangedEvent?.Invoke(obj);
         }
-    }
-
-    private static GameObject? GetGameObject(object obj)
-    {
-        return obj switch
-        {
-            GameObject g => g,
-            Component c => c.gameObject,
-            _ => null
-        };
     }
 
     public static void Inspect(object? obj)

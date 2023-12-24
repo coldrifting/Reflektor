@@ -1,0 +1,31 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Styles.scss?fileID=7433441132597879392&amp;guid=272d8a6887c25d448a3f1612c249d9c3&amp;type=3#Styles" />
+    <ui:VisualElement name="InspectorWindowRoot" class="root">
+        <ui:ScrollView name="TabBar" mode="Horizontal" vertical-scroller-visibility="Hidden" horizontal-scroller-visibility="Hidden">
+            <ui:VisualElement class="focused">
+                <ui:Label tabindex="-1" text="Transform&#10;LaunchpadFileDialog" display-tooltip-when-elided="true" />
+                <ui:Button text="✗" display-tooltip-when-elided="true" />
+            </ui:VisualElement>
+            <ui:VisualElement>
+                <ui:Label tabindex="-1" text="type goes here&#10;a very long long long long long long long long long long label" style="overflow: hidden; -unity-text-align: middle-left;" />
+                <ui:Button text="✗" display-tooltip-when-elided="true" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+        <ui:TextField picking-mode="Ignore" value="/" name="PathInput" is-delayed="true" />
+        <ui:GroupBox name="InspectorControls" style="display: flex;">
+            <ui:TextField picking-mode="Ignore" label="Filter" name="SearchInput" is-delayed="false" />
+            <ui:GroupBox name="MemberControls" style="display: flex;">
+                <ui:Toggle label="Properties" name="PropertyToggle" value="true" />
+                <ui:Toggle label="Fields" name="FieldToggle" value="true" />
+                <ui:Toggle label="Methods" name="MethodToggle" value="true" />
+                <ui:VisualElement class="spacer" />
+                <ui:Toggle label="Read Only" name="ReadOnlyToggle" value="true" />
+            </ui:GroupBox>
+            <ui:GroupBox name="RefreshControls" style="display: flex;">
+                <ui:Toggle label="Auto Refresh" name="AutoRefreshToggle" />
+                <ui:Button text="Refresh" display-tooltip-when-elided="true" name="RefreshButton" />
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:ScrollView name="InspectorContent" horizontal-scroller-visibility="Hidden" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,6 +1,8 @@
 ﻿using System.Globalization;
 using System.Reflection;
+using RTG;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Reflektor.Elements;
 
@@ -9,6 +11,40 @@ public class ElementColor : BaseElementText<Color>
     public ElementColor(object obj, MemberInfo memberInfo) : 
         base(obj, memberInfo, Utils.TryParse, Utils.ToSimpleString)
     {
+        VisualElement preview = new VisualElement();
+        preview.style.width = 20;
+        preview.style.height = 20;
+        preview.style.borderBottomLeftRadius = 3;
+        preview.style.borderBottomRightRadius = 3;
+        preview.style.borderTopLeftRadius = 3;
+        preview.style.borderTopRightRadius = 3;
+        preview.style.borderTopColor = new Color(0.3f, 0.3f, 0.3f, 0.75f);
+        preview.style.borderTopWidth = 1;
+        preview.style.borderBottomColor = new Color(0.3f, 0.3f, 0.3f, 0.75f);
+        preview.style.borderBottomWidth = 1;
+        preview.style.borderLeftColor = new Color(0.3f, 0.3f, 0.3f, 0.75f);
+        preview.style.borderLeftWidth = 1;
+        preview.style.borderRightColor = new Color(0.3f, 0.3f, 0.3f, 0.75f);
+        preview.style.borderRightWidth = 1;
+        preview.style.marginTop = 8;
+        preview.style.marginLeft = 12;
+        if (MemInfo.GetValue(Obj) is Color colorA)
+        {
+            preview.style.backgroundColor = colorA.KeepAllButAlpha(1);
+        }
+        
+        Reflektor.PropertyChangedEvent += evtObj =>
+        {
+            if (evtObj == Obj)
+            {
+                if (MemInfo.GetValue(Obj) is Color color)
+                {
+                    preview.style.backgroundColor = color.KeepAllButAlpha(1);
+                }
+            }
+        };
+
+        Add(preview);
     }
 }
 

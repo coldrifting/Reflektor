@@ -43,8 +43,7 @@ public class BrowserObjects
             _sceneChangeDropdown.choices.Add(scene.name);
         }
         _sceneChangeDropdown.RegisterValueChangedCallback(_ => _browser.Refresh(null));
-        
-        _sceneChangeDropdown.value = _sceneChangeDropdown.choices.Last();
+        _sceneChangeDropdown.SetValueWithoutNotify(_sceneChangeDropdown.choices.Last());
         
         _upBtn.clicked += _browser.Up;
         _refreshBtn.clicked += UpdateObjects;

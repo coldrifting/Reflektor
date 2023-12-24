@@ -28,11 +28,18 @@ $foldout-header-selected-checked-color: #565ACE;
 $foldout-header-checked-color: #4B50B0;
 
 
-.root {
+#BrowserWindowRoot {
 	min-height: 650px;
 	max-height: 650px;
 	min-width: 700px;
 	max-width: 700px;
+}
+
+#InspectorWindowRoot {
+	min-height: 750px;
+	max-height: 750px;
+	min-width: 1000px;
+	max-width: 1000px;
 }
 
 TextField {
@@ -183,5 +190,168 @@ ListView {
 	&:active > .unity-popup-field__input {
 		background-color: $bg-input-hover;
 		border-color: $bg-input-border-focus;
+	}
+}
+
+#InspectorControls {
+	align-items: center;
+	GroupBox {
+		min-height: 0px;
+		margin: 0px;
+		padding: 0px;
+		align-items: center;
+	}
+	Toggle  {
+		VisualElement {
+			display: none;
+		}
+		> Label {
+			-unity-text-align: middle-center;
+			min-width: auto;
+			padding-left: 2px;
+			border-radius: 4px;
+			color: white;
+			background-color: rgba(1,1,1,0.25);
+		}
+	}
+	#PropertyToggle {
+		> Label {
+			color: #529D89;
+		}
+		&:hover > Label {
+			color: white;
+			background-color: #3D675B;
+		}
+		&:checked > Label {
+			color: white;
+			background-color: #2D574B;
+		}
+		&:checked:hover > Label {
+			color: white;
+			background-color: #529D89;
+		}
+	}
+	#FieldToggle {
+		> Label {
+			color: #673689;
+		}
+		&:hover > Label {
+			color: white;
+			background-color: #9951C9;
+		}
+		&:checked > Label {
+			color: white;
+			background-color: #673689;
+		}
+		&:checked:hover > Label {
+			color: white;
+			background-color: #A961D9;
+		}
+	}
+	#MethodToggle {
+		> Label {
+			color: #894404;
+		}
+		&:hover > Label {
+			color: white;
+			background-color: #CE670E;
+		}
+		&:checked > Label {
+			color: white;
+			background-color: #894404;
+		}
+		&:checked:hover > Label {
+			color: white;
+			background-color: #DE771E;
+		}
+	}
+	#ReadOnlyToggle {
+		&:hover > Label {
+			background-color: #555555;
+		}
+		&:checked > Label {
+			background-color: #444444;
+		}
+		&:checked:hover > Label {
+			background-color: #666666;
+		}
+	}
+	#AutoRefreshToggle {
+		&:hover > Label {
+			background-color: #005588;
+		}
+		&:checked > Label {
+			background-color: #004477;
+		}
+		&:checked:hover > Label {
+			background-color: #006699;
+		}
+	}
+	#SearchInput {
+		width: 350px;
+	}
+}
+
+.spacer {
+	min-width: 20px;
+}
+
+#TabBar {
+	font-size: 11px;
+	margin: 0px;
+	padding: 0px;
+	height: 42px;
+	> VisualElement {
+		//max-width: 200px;
+		&.focused {
+			background-color: #118855;
+			> Label {
+				color: white;
+			}
+		}
+		background-color: rgba(0,0,0,0.25);
+		flex-direction: row;
+		align-items: center;
+		padding: 4px;
+		margin-right: 4px;
+		border-radius: 3px;
+		> Label {
+			-unity-text-align: middle-left;
+			max-width: 200px;
+		}
+		> Button {
+			width: 22px;
+			height: 22px;
+			font-size: 20px;
+			padding: 10px;
+			background-color: rgba(0,0,0,0.5);
+			border-color: rgba(0,0,0,0);
+			border-radius: 3px;
+			&:hover {
+				background-color: #991100;
+			}
+			&:active {
+				background-color: #ff0000;
+			}
+		}
+	}
+	#unity-content-and-vertical-scroll-container {
+		max-width: 100%;
+		padding: 0px;
+		margin: 0px;
+		background-color: transparent;
+	}
+}
+
+#InspectorContent {
+	DropdownField {
+		padding: 0px;
+		margin: 1px;
+	}
+	.unity-popup-field__input,
+	.unity-enum-field__input {
+		height: 24px;
+		font-size: 11px;
+		padding: 3px 10px 3px 10px;
 	}
 }
