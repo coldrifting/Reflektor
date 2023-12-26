@@ -26,6 +26,15 @@
                 <ui:Button text="Refresh" display-tooltip-when-elided="true" name="RefreshButton" />
             </ui:GroupBox>
         </ui:GroupBox>
-        <ui:ScrollView name="InspectorContent" horizontal-scroller-visibility="Hidden" />
+        <ui:VisualElement name="InspectorContent">
+            <ui:ScrollView>
+                <ui:VisualElement class="BaseElement">
+                    <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                    <ui:TextField picking-mode="Ignore" value="dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" />
+                    <ui:Button text="Button" display-tooltip-when-elided="true" />
+                    <ui:DropdownField index="-1" choices="System.Collections.Generic.List`1[System.String]" />
+                </ui:VisualElement>
+            </ui:ScrollView>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

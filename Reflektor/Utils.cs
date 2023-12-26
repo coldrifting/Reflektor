@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using Reflektor.Elements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -38,6 +41,53 @@ public static class Utils
                 ? message 
                 : $"<color={hexColor}>{message}</color>";
         }
+    }
+    
+    public static EBase GetElement(object parent, MemberInfo? memberInfo = null, int? indexer = null, object? key = null)
+    {
+        object? obj;
+        if (memberInfo is not null)
+        {
+            obj = memberInfo.GetValue(parent);
+        }
+        else if (indexer is not null && parent is IList list)
+        {
+            obj = list[indexer.Value];
+        }
+        else if (key is not null && parent is IDictionary dict)
+        {
+            obj = dict[key];
+        }
+        else
+        {
+            obj = null;
+        }
+        
+        EBase x = obj switch
+        {
+            int => new EInt(parent, memberInfo, indexer, key),
+            float => new EFloat(parent, memberInfo, indexer, key),
+            double => new EDouble(parent, memberInfo, indexer, key),
+            bool => new EBool(parent, memberInfo, indexer, key),
+            string => new EString(parent, memberInfo, indexer, key),
+            Vector2 => new EVec2(parent, memberInfo, indexer, key),
+            Vector3 => new EVec3(parent, memberInfo, indexer, key),
+            Vector4 => new EVec4(parent, memberInfo, indexer, key),
+            Quaternion => new EQuaternion(parent, memberInfo, indexer, key),
+            Color => new EColor(parent, memberInfo, indexer, key),
+            Enum => new EEnum(parent, memberInfo, indexer, key),
+            IList => new ECollection(parent, memberInfo, indexer, key),       // Array like collections
+            IDictionary => new ECollection(parent, memberInfo, indexer, key), // Key/Value collections
+            ICollection => new ECollection(parent, memberInfo, indexer, key), // All other collections
+            MethodBase methodBase => new EMethod(parent, methodBase, indexer, key),
+            _ => new EObject(parent, memberInfo, indexer, key)
+        };
+        return x;
+    }
+
+    public static bool IsList(object obj)
+    {
+        return obj.GetType().IsGenericType && obj.GetType().GetGenericTypeDefinition() == typeof(IReadOnlyList<>);
     }
     
     // String validation

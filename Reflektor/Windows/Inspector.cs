@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -26,10 +27,11 @@ public class Inspector : BaseWindow
     private readonly Toggle _autoRefreshToggle;
     private readonly Button _refreshButton;
     
-    private readonly ScrollView _inspectorContent;
+    private readonly VisualElement _inspectorContent;
 
     // Data
-    private readonly Dictionary<object, (VisualElement, List<BaseElement>)> _tabs = new();
+    private readonly Dictionary<object, Vector2> _tabOffset = new();
+    private readonly Dictionary<object, (VisualElement, ScrollView)> _tabs = new();
     private DisplayFlags _flags = DisplayFlags.All;
     
     private object? _current;
@@ -60,7 +62,7 @@ public class Inspector : BaseWindow
         _autoRefreshToggle = Window.rootVisualElement.Q<Toggle>(name: "AutoRefreshToggle");
         _refreshButton = Window.rootVisualElement.Q<Button>(name: "RefreshButton");
 
-        _inspectorContent = Window.rootVisualElement.Q<ScrollView>(name: "InspectorContent");
+        _inspectorContent = Window.rootVisualElement.Q<VisualElement>(name: "InspectorContent");
 
         // Add callbacks
         _pathInput.RegisterValueChangedCallback(evt =>
@@ -95,7 +97,7 @@ public class Inspector : BaseWindow
         _tabBar.Clear();
         Window.Hide();
         //SwitchTab(GameObject.Find("/GameManager"));
-        //SwitchTab(new TestClass());
+        SwitchTab(new TestClass());
     }
 
     private void ToggleFlag(DisplayFlags flag, bool shouldSet)
@@ -125,12 +127,16 @@ public class Inspector : BaseWindow
         tab.Add(b);
         tab.Add(close);
 
-        List<BaseElement> elements = GetElements(obj);
-        _tabs[obj] = (tab, elements);
+        List<EBase> elements = GetElements(obj);
+
+        ScrollView s = new();
+        _inspectorContent.Add(s);
+        
+        _tabs[obj] = (tab, s);
         _tabBar.Add(tab);
-        foreach (BaseElement? e in elements)
+        foreach (EBase? e in elements)
         {
-            _inspectorContent.Add(e);
+            s.Add(e);
         }
     }
 
@@ -139,6 +145,9 @@ public class Inspector : BaseWindow
         if (Current is not null)
         {
             _tabs[Current].Item1.RemoveFromClassList("focused");
+
+            _tabOffset[Current] = _tabs[Current].Item2.scrollOffset;
+            Reflektor.Log(_tabOffset[Current]);
         }
         
         Current = obj;
@@ -147,7 +156,28 @@ public class Inspector : BaseWindow
         AddTab(obj);
         UpdateDisplay();
 
+        foreach (VisualElement v in _inspectorContent.Children())
+        {
+            v.Hide();
+        }
+
+        _tabs[obj].Item2.Show();
+        if (_tabOffset.TryGetValue(obj, out Vector2 scrollPos))
+        {
+            if (Reflektor.Instance != null)
+            {
+                Reflektor.Instance.StartCoroutine(UpdateScrollView(obj, scrollPos));
+            }
+        }
+
         _tabs[obj].Item1.AddToClassList("focused");
+    }
+
+    private IEnumerator UpdateScrollView(object obj, Vector2 scrollPos)
+    {
+        yield return new WaitForEndOfFrame();
+        
+        _tabs[obj].Item2.scrollOffset = scrollPos;
     }
 
     private void CloseTab(object obj)
@@ -158,10 +188,8 @@ public class Inspector : BaseWindow
         }
         
         _tabBar.Remove(_tabs[obj].Item1);
-        foreach (BaseElement v in _tabs[obj].Item2)
-        {
-            _inspectorContent.Remove(v);
-        }
+        _inspectorContent.Remove(_tabs[obj].Item2);
+        _tabOffset.Remove(obj);
 
         _tabs.Remove(obj);
         
@@ -177,18 +205,21 @@ public class Inspector : BaseWindow
 
     private void UpdateDisplay()
     {
-        foreach ((object obj, (VisualElement _, List<BaseElement> el)) in _tabs)
+        foreach ((object obj, (VisualElement _, ScrollView s)) in _tabs)
         {
-            foreach (var b in el)
+            foreach (VisualElement? e in s.Children())
             {
-                b.RefreshDisplay(obj == Current && b.GetName().Contains(_searchInput.value, StringComparison.InvariantCultureIgnoreCase)? _flags : DisplayFlags.None);
+                if (e is EBase b)
+                {
+                    b.Refresh(obj == Current && b.GetName().Contains(_searchInput.value, StringComparison.InvariantCultureIgnoreCase)? _flags : DisplayFlags.None);
+                }
             }
         }
     }
 
-    private static List<BaseElement> GetElements(object obj)
+    private static List<EBase> GetElements(object obj)
     {
-        List<BaseElement> output = new();
+        List<EBase> output = new();
         
         int counter = 0;
 
@@ -197,52 +228,39 @@ public class Inspector : BaseWindow
         members.AddRange(obj.GetType().GetAllFields().Where(IgnoreCompilerAttributes));
         members.AddRange(obj.GetType().GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(IgnoreCompilerAttributes).Where(m => !m.IsSpecialName));
 
+        int maxsize = 0;
         foreach (MemberInfo memberInfo in members)
         {
             try
             {
-                BaseElement element;
-
-                if (memberInfo is MethodInfo methodInfo)
-                {
-                    element = new ElementMethod(obj, methodInfo);
-                }
-                else
-                {
-                    object? memberObj = memberInfo.GetValue(obj);
-                    if (memberObj is null)
-                    {
-                        continue;
-                    }
-                    Type memberType = memberObj.GetType();
-                    if (memberType.IsEnum)
-                    {
-                        element = new ElementEnum(obj, memberInfo);
-                    }
-                    else if (memberType.IsArray)
-                    {
-                        element = new ElementCollection(obj, memberInfo, true);
-                    }
-                    else if (memberType.IsGenericList())
-                    {
-                        element = new ElementCollection(obj, memberInfo);
-                    }
-                    else
-                    {
-                        element = GetElement(obj, memberInfo);
-                    }
-                }
+                EBase element = Utils.GetElement(obj, memberInfo);
 
                 element.style.backgroundColor = counter++ % 2 == 0
                     ? new Color(0, 0, 0, 0.1f)
                     : new Color(0, 0, 0, 0);
                 
                 output.Add(element);
+
+                if (!element.ConsiderForLengthCalc)
+                {
+                    continue;
+                }
+                
+                int size = element.GetName().StripHtml().Length;
+                if (size > maxsize)
+                {
+                    maxsize = size;
+                }
             }
             catch (Exception)
             {
                 Reflektor.Log($"Could not add the element {memberInfo.Name}");
             }
+        }
+
+        foreach (EBase b in output)
+        {
+            b.SetLabelLength(maxsize * 8);
         }
 
         return output;
@@ -251,25 +269,6 @@ public class Inspector : BaseWindow
     private static bool IgnoreCompilerAttributes(MemberInfo m)
     {
         return m.GetCustomAttribute<CompilerGeneratedAttribute>() == null;
-    }
-
-    private static BaseElement GetElement(object obj, MemberInfo memberInfo)
-    {
-        BaseElement x = memberInfo.GetValue(obj) switch
-        {
-            int => new ElementInt(obj, memberInfo),
-            float => new ElementFloat(obj, memberInfo),
-            double => new ElementDouble(obj, memberInfo),
-            bool => new ElementBool(obj, memberInfo),
-            string => new ElementString(obj, memberInfo),
-            Vector2 => new ElementVector2(obj, memberInfo),
-            Vector3 => new ElementVector3(obj, memberInfo),
-            Vector4 => new ElementVector4(obj, memberInfo),
-            Quaternion => new ElementQuaternion(obj, memberInfo),
-            Color => new ElementColor(obj, memberInfo),
-            _ => new ElementObject(obj, memberInfo)
-        };
-        return x;
     }
 
     private void GetPathString()
@@ -282,48 +281,5 @@ public class Inspector : BaseWindow
             _ => Current.ToString(),
         };
         _pathInput.SetValueWithoutNotify(path);
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[SuppressMessage("ReSharper", "CollectionNeverQueried.Local")]
-public class TestClass
-{
-    private List<int> intList { get; set; } = new();
-    private readonly List<float> _floatList = new();
-    private readonly List<string> _stringList = new();
-
-    private string[] values = new string[] { "A", "KSP 2", "test" };
-
-    private bool val = true;
-    
-    public TestClass()
-    {
-        intList.Add(1);
-        intList.Add(0);
-        intList.Add(36);
-
-        _floatList.Add(3.0f);
-        _floatList.Add(-1.5f);
-
-        _stringList.Add("A");
-        _stringList.Add("B");
-        _stringList.Add("C");
-        _stringList.Add("D");
-    }
-
-    private static bool StaticBoolFalseMethod()
-    {
-        return false;
-    }
-    
-    private bool InstanceBoolTrueMethod()
-    {
-        return val;
-    }
-    
-    public void InstanceVoidMethod()
-    {
-        Debug.Log("Nothing to see here...");
     }
 }

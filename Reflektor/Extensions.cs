@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Reflektor;
 
@@ -63,6 +64,7 @@ public static class Extensions
     {
         PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
         FieldInfo fieldInfo => fieldInfo.GetValue(obj),
+        MethodBase methodBase => methodBase,
         _ => null
     };
 
@@ -115,6 +117,7 @@ public static class Extensions
         {
             Component c => $"{objType}\r\n{c.name}",
             GameObject g => $"{objType}\r\n{g.name}",
+            Object o => $"{objType}\r\n{o.name}",
             not null => objType,
             _ => ""
         };

@@ -49,12 +49,10 @@ TextField {
 
 	#unity-text-input {
 		border-radius: 6px;
-		.unity-text-element {
-			padding-left: 2px;
-			min-width: 100%;
-			max-width: 100%;
-			white-space: normal;
-		}
+	}
+
+	&.readonly {
+		color: gray;
 	}
 }
 
@@ -110,6 +108,13 @@ ListView {
 
 #PathInput {
 	font-size: 13px;
+
+	.unity-text-element {
+		padding-left: 2px;
+		min-width: 100%;
+		max-width: 100%;
+		white-space: normal;
+	}
 }
 
 #Splitter {
@@ -344,6 +349,42 @@ ListView {
 }
 
 #InspectorContent {
+	.BaseElement {
+		font-size: 11px;
+		Label {
+			height: 28px;
+			-unity-text-align: middle-left;
+		}
+		TextField {
+			padding: 0px;
+			margin: 0px;
+			min-width: 150px;
+			height: 28px;
+			flex-shrink: 1;
+		}
+		Button {
+			height: 24px;
+			margin: 2px;
+			font-size: 11px;
+		}
+		DropdownField {
+			margin: 2px;
+		}
+		TextField > #unity-text-input {
+			padding: 0px;
+			margin: 2px;
+		}
+		TextField > #unity-text-input > .unity-text-element {
+			height: 24px;
+			padding-bottom: 3px;
+			padding-left: 6px;
+		}
+		flex-direction: row;
+
+		width: 100%;
+		min-width: 100%;
+		max-width: 100%;
+	}
 	DropdownField {
 		padding: 0px;
 		margin: 1px;
@@ -354,4 +395,5 @@ ListView {
 		font-size: 11px;
 		padding: 3px 10px 3px 10px;
 	}
+	flex-grow: 1;
 }

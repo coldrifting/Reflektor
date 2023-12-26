@@ -22,7 +22,7 @@ public class Reflektor : BaseSpaceWarpPlugin
     [PublicAPI] public const string ModName = "Reflektor";
     [PublicAPI] public const string ModVer = "0.1.0.0";
 
-    private static Reflektor? _instance;
+    public static Reflektor? Instance;
 
     // Events
     public static event Action<object>? PropertyChangedEvent;
@@ -42,7 +42,7 @@ public class Reflektor : BaseSpaceWarpPlugin
     {
         base.OnInitialized();
         Log("Initializing");
-        _instance = this;
+        Instance = this;
 
         GameObject rootGameObject = new GameObject("_InspectorRoot");
         DontDestroyOnLoad(rootGameObject);
@@ -73,13 +73,13 @@ public class Reflektor : BaseSpaceWarpPlugin
 
     private void RefreshBrowser()
     {
-        if (_instance == null)
+        if (Instance == null)
         {
             return;
         }
 
         var coroutine = RefreshBrowserAfterWait(3);
-        _instance.StartCoroutine(coroutine);
+        Instance.StartCoroutine(coroutine);
     }
 
     private IEnumerator RefreshBrowserAfterWait(int numFrames)
@@ -120,12 +120,12 @@ public class Reflektor : BaseSpaceWarpPlugin
 
     public static void FirePropertyChangedEvent(object obj)
     {
-        if (_instance is null)
+        if (Instance is null)
         {
             return;
         }
 
-        _instance.StartCoroutine(FirePropertyChangeEventAfterWait(obj, 3));
+        Instance.StartCoroutine(FirePropertyChangeEventAfterWait(obj, 3));
     }
 
     private static IEnumerator FirePropertyChangeEventAfterWait(object obj, int numFrames)
@@ -152,9 +152,9 @@ public class Reflektor : BaseSpaceWarpPlugin
 
     public static void Inspect(object? obj)
     {
-        if (_instance is not null && obj is not null)
+        if (Instance is not null && obj is not null)
         {
-            _instance._inspector?.SwitchTab(obj);
+            Instance._inspector?.SwitchTab(obj);
         }
     }
 
