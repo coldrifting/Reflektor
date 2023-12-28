@@ -1,0 +1,457 @@
+$fg-color: #c0c7d5;
+$bg-color: #22262E;
+
+$bg-scrollview: #1e2129;
+
+$fg-input: white;
+
+$bg-input: rgba(0,0,0,0.3); //#0f1318;
+$bg-input-hover: #1C1C26;
+$bg-input-focus: #001632;
+
+$bg-input-border: #333333;
+$bg-input-border-hover: #555555;
+$bg-input-border-focus: #777777;
+
+$bg-button: #0f1318;
+$bg-button-hover: #415483;
+$bg-button-active: #6580c7;
+$bg-button-focus: #333333;
+
+$fg-label: #c0c7d5;
+
+$foldout-border-color: #354051;
+$foldout-bg-color: #2e3540;
+$foldout-header-unselected-color: transparent;
+$foldout-header-selected-color: #3F4487;
+$foldout-header-selected-checked-color: #565ACE;
+$foldout-header-checked-color: #4B50B0;
+
+
+#BrowserWindowRoot {
+	min-height: 650px;
+	max-height: 650px;
+	min-width: 700px;
+	max-width: 700px;
+}
+
+#InspectorWindowRoot {
+	min-height: 750px;
+	max-height: 750px;
+	min-width: 1000px;
+	max-width: 1000px;
+}
+
+TextField {
+	> Label {
+		min-width: 75px;
+	}
+
+	#unity-text-input {
+		border-radius: 6px;
+	}
+
+	&.readonly {
+		color: gray;
+	}
+}
+
+ListView {
+	border-radius: 6px;
+	background-color: #192128;
+
+	.unity-list-view__item {
+		border-radius: 6px;
+		padding-left: 6px;
+		&:hover {
+			background-color: #3F4487;
+		}
+		&:checked {
+			background-color: #4B50B0;
+		}
+	}
+}
+
+#ComponentList {
+	.unity-list-view__item {
+		color: #0DA674;
+		&:hover {
+			color: white;
+			background-color: #0DA674;
+		}
+		&:checked {
+			color: white;
+			background-color: #156F50;
+		}
+	}
+}
+
+DropdownField {
+	margin: 4px 0px;
+	padding: 4px 0px;
+}
+
+GroupBox {
+	margin: 4px 0px;
+	padding: 4px 0px;
+	flex-direction: row;
+	justify-content: space-between;
+}
+
+Toggle {
+	padding: 4px 0px;
+}
+
+ListView {
+	flex-grow: 1;
+}
+
+#PathInput {
+	font-size: 12px;
+
+	.unity-text-element {
+		padding-left: 2px;
+		min-width: 100%;
+		max-width: 100%;
+		white-space: normal;
+	}
+}
+
+#Splitter {
+	flex-grow: 1;
+	flex-direction: row;
+	max-width: 650px;
+}
+
+#RaycastPane {
+	display: none;
+	min-width: 332px;
+	max-width: 332px;
+}
+
+#RaycastLabel {
+	color: #00ff77;
+}
+
+#ObjectPane {
+	min-width: 332px;
+	max-width: 332px;
+}
+
+#DetailsPane {
+	padding-left: 8px;
+	min-width: 350px;
+	max-width: 350px;
+}
+
+#UpBtn, #RefreshBtn {
+	padding: 8px;
+	margin-left: 4px;
+	font-size: 22px;
+	flex-grow: 1;
+}
+
+#SceneChangeDropdown {
+	flex-grow: 10;
+	width: 65%;
+	padding: 0px;
+	margin: 0px;
+}
+
+// Dropdown
+.unity-base-popup-field__arrow,
+.unity-enum-field__arrow {
+	margin-right: 4px;
+	-unity-background-image-tint-color: rgba(255, 255, 255, 0.6);
+}
+.unity-popup-field,
+.unity-enum-field {
+	.unity-text-element {
+		-unity-text-align: middle-left;
+	}
+	.unity-popup-field__input,
+	.unity-enum-field__input {
+		height: 30px;
+		color: $fg-label;
+		margin: 0;
+		background-color: $bg-input;
+		border-color: $bg-input-border;
+		border-radius: 6px;
+		font-size: 14px;
+		padding: 3px 10px 3px 10px;
+	}
+	&:inactive > .unity-enum-field__input,
+	&:inactive > .unity-popup-field__input {
+		color: $fg-label;
+		background-color: $bg-input;
+	}
+	&:hover > .unity-enum-field__input,
+	&:hover > .unity-popup-field__input {
+		color: $fg-label;
+		background-color: $bg-input-hover;
+		border-color: $bg-input-border-hover;
+	}
+	&:active > .unity-enum-field__input,
+	&:active > .unity-popup-field__input {
+		background-color: $bg-input-hover;
+		border-color: $bg-input-border-focus;
+	}
+}
+
+#InspectorControls {
+	align-items: center;
+	margin: 0px;
+	GroupBox {
+		min-height: 0px;
+		margin: 0px;
+		padding: 0px;
+		align-items: center;
+	}
+	Toggle  {
+		VisualElement {
+			display: none;
+		}
+		> Label {
+			-unity-text-align: middle-center;
+			min-width: auto;
+			padding-left: 2px;
+			border-radius: 4px;
+			color: white;
+			background-color: rgba(1,1,1,0.25);
+		}
+	}
+	#PropertyToggle {
+		> Label {
+			color: #3D675B;
+		}
+		&:hover > Label {
+			color: #529D89;
+			background-color: rgba(1,1,1,0.5);
+		}
+		&:checked > Label {
+			color: white;
+			background-color: #2D574B;
+		}
+		&:checked:hover > Label {
+			color: white;
+			background-color: #529D89;
+		}
+	}
+	#FieldToggle {
+		> Label {
+			color: #673689;
+		}
+		&:hover > Label {
+			color: #9951C9;
+			background-color: rgba(1,1,1,0.5);
+		}
+		&:checked > Label {
+			color: white;
+			background-color: #673689;
+		}
+		&:checked:hover > Label {
+			color: white;
+			background-color: #A961D9;
+		}
+	}
+	#MethodToggle {
+		> Label {
+			color: #894404;
+		}
+		&:hover > Label {
+			color: #CE670E;
+			background-color: rgba(1,1,1,0.5);
+		}
+		&:checked > Label {
+			color: white;
+			background-color: #894404;
+		}
+		&:checked:hover > Label {
+			color: white;
+			background-color: #DE771E;
+		}
+	}
+	#AutoRefreshToggle {
+		> Label {
+			color: #005588;
+		}
+		&:hover > Label {
+			color: #006699;
+			background-color: rgba(1,1,1,0.5);
+		}
+		&:checked > Label {
+			color: white;
+			background-color: #004477;
+		}
+		&:checked:hover > Label {
+			color: white;
+			background-color: #006699;
+		}
+	}
+	#RefreshButton {
+		padding: 2px 6px;
+		border-width: 1;
+		height: 28px;
+	}
+	#FilterInput {
+		width: 500px;
+		font-size: 12px;
+	}
+}
+
+.spacer {
+	min-width: 20px;
+}
+
+#TabBar {
+	font-size: 11px;
+	margin: 0px;
+	padding: 0px;
+	height: 42px;
+	> VisualElement {
+		//max-width: 200px;
+		&.focused {
+			background-color: #115588;
+			> Label {
+				color: white;
+			}
+		}
+		&:hover {
+			background-color: rgba(255,255,255,0.1);
+		}
+		&.focused:hover {
+			background-color: #226699;
+		}
+		background-color: rgba(0,0,0,0.25);
+		flex-direction: row;
+		align-items: center;
+		padding: 4px;
+		margin-right: 4px;
+		border-radius: 3px;
+		> Label {
+			-unity-text-align: middle-left;
+			max-width: 200px;
+		}
+		> Button {
+			width: 22px;
+			height: 22px;
+			font-size: 20px;
+			padding: 10px;
+			background-color: rgba(0,0,0,0.5);
+			border-color: rgba(0,0,0,0);
+			border-radius: 3px;
+			&:hover {
+				background-color: #991100;
+			}
+			&:active {
+				background-color: #ff0000;
+			}
+		}
+	}
+	#unity-content-and-vertical-scroll-container {
+		max-width: 100%;
+		padding: 0px;
+		margin: 0px;
+		background-color: transparent;
+	}
+}
+
+#InspectorContent {
+	flex-grow: 1;
+	flex-shrink: 1;
+	font-size: 11px;
+
+	width: 100%;
+	min-width: 100%;
+	max-width: 100%;
+
+	Label {
+		height: 28px;
+		-unity-text-align: middle-left;
+	}
+	.input-control {
+		flex-direction: row;
+		Button {
+			height: 24px;
+			margin: 2px;
+			font-size: 11px;
+		}
+		> Button {
+			min-width: 120px;
+			margin-right: 12px;
+			flex-shrink: 1;
+		}
+		> VisualElement {
+			flex-shrink: 1;
+			width: 50%;
+		}
+		> VisualElement > VisualElement > Toggle {
+			width: 100%;
+		}
+		Toggle {
+			padding: 0px;
+			> .unity-toggle__input {
+				margin-top: 2px;
+				height: 22px;
+				> .unity-toggle__checkmark {
+					height: 18px;
+				}
+			}
+		}
+		DropdownField,
+		EnumField {
+			flex-shrink: 1;
+			width: 50%;
+			padding: 0px;
+			margin: 2px;
+			.unity-popup-field__input,
+			.unity-enum-field__input {
+				height: 24px;
+				font-size: 11px;
+				padding: 3px 10px 3px 10px;
+			}
+		}
+		TextField {
+			padding: 0px;
+			margin: 0px;
+			min-width: 50%;
+			flex-shrink: 1;
+			height: 28px;
+			flex-shrink: 1;
+			> #unity-text-input {
+				padding: 0px;
+				margin: 2px;
+				> .unity-text-element {
+					height: 24px;
+					padding-bottom: 3px;
+					padding-left: 6px;
+				}
+			}
+		}
+		.color-preview {
+			max-width: 20px;
+			height: 20px;
+			background-color: red;
+			border-color: #444444;
+			border-width: 1px;
+			border-radius: 6px;
+			margin-top: 4px;
+			margin-left: -24px;
+		}
+		.container-expanded {
+			flex-direction: column;
+			flex-grow: 1;
+			flex-shrink: 1;
+			> .input-control > TextField {
+				width: 100%;
+				flex-shrink: 1;
+				flex-grow: 1;
+			}
+		}
+		.method-output {
+			flex-shrink: 1;
+			flex-grow: 1;
+			white-space: normal;
+		}
+	}
+}

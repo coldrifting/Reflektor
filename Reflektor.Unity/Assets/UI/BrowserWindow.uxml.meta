@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 3bd9fed32fafbe541a00bfad043179b2
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: reflektor_ui.bundle
+  assetBundleVariant: 
+  script: {fileID: 13804, guid: 0000000000000000e000000000000000, type: 0}

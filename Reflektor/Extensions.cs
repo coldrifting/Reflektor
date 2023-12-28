@@ -1,135 +1,177 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
+using Object = UnityEngine.Object;
 
 namespace Reflektor;
 
 public static class Extensions
 {
-    public static bool TryParse(string value, out Quaternion output)
-    {
-        if (TryParse(value, out Vector4 outVec))
-        {
-            output = new Quaternion(outVec.x, outVec.y, outVec.z, outVec.w);
-            return true;
-        }
-
-        output = Quaternion.identity;
-        return false;
-    }
+    private const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | 
+                                       BindingFlags.Static | BindingFlags.Instance | 
+                                       BindingFlags.DeclaredOnly;
     
-    public static bool TryParse(string value, out Vector4 output)
+    // Types and Reflection
+    public static bool IsReadOnly(this MemberInfo memberInfo)
     {
-        string[] values = value.Split(new[]{',', ' '}, StringSplitOptions.RemoveEmptyEntries);
-        
-        if (values.Length >= 4)
+        switch (memberInfo)
         {
-            if (float.TryParse(values[0], out float x))
-            {
-                if (float.TryParse(values[1], out float y))
+            case PropertyInfo propertyInfo:
+                if (typeof(IList).IsAssignableFrom(propertyInfo.PropertyType) ||
+                    typeof(IDictionary).IsAssignableFrom(propertyInfo.PropertyType))
                 {
-                    if (float.TryParse(values[2], out float z))
-                    {
-                        if (float.TryParse(values[3], out float w))
-                        {
-                            output = new Vector4(x, y, z, w);
-                            return true;
-                        }
-                    }
+                    return false;
                 }
-            }
-        }
 
-        if (TryParse(value, out Vector3 vec3))
-        {
-            output = vec3;
-            return true;
-        }
-
-        output = Vector4.zero;
-        return false;
-    }
-    
-    public static bool TryParse(string value, out Vector3 output)
-    {
-        string[] values = value.Split(new[]{',', ' '}, StringSplitOptions.RemoveEmptyEntries);
-        
-        if (values.Length >= 3)
-        {
-            if (float.TryParse(values[0], out float x))
-            {
-                if (float.TryParse(values[1], out float y))
+                if (typeof(ICollection).IsAssignableFrom(propertyInfo.PropertyType))
                 {
-                    if (float.TryParse(values[2], out float z))
-                    {
-                        output = new Vector3(x, y, z);
-                        return true;
-                    }
-                }
-            }
-        }
-
-        if (TryParse(value, out Vector2 vec2))
-        {
-            output = vec2;
-            return true;
-        }
-
-        output = Vector3.zero;
-        return false;
-    }
-    
-    public static bool TryParse(string value, out Vector2 output)
-    {
-        string[] values = value.Split(new[]{',', ' '}, StringSplitOptions.RemoveEmptyEntries);
-        if (values.Length >= 2)
-        {
-            if (float.TryParse(values[0], out float x))
-            {
-                if (float.TryParse(values[1], out float y))
-                {
-                    output = new Vector3(x, y, 0);
                     return true;
                 }
-            }
-        }
-
-        if (values.Length >= 1)
-        {
-            if (float.TryParse(values[0], out float x))
-            {
-                output = new Vector3(x, x, x);
+                
+                return propertyInfo.GetSetMethod(true) is null;
+            case FieldInfo fieldInfo:
+                return fieldInfo is { IsLiteral: true, IsInitOnly: false };
+            default:
                 return true;
+        }
+    }
+
+    public static object? GetValue(this MemberInfo memberInfo, object obj) => memberInfo switch
+    {
+        PropertyInfo propertyInfo => propertyInfo.GetValue(obj),
+        FieldInfo fieldInfo => fieldInfo.GetValue(obj),
+        MethodInfo methodInfo => methodInfo,
+        _ => null
+    };
+
+    public static void SetValue(this MemberInfo memberInfo, object obj, object val)
+    {
+        switch (memberInfo)
+        {
+            case PropertyInfo propertyInfo:
+                if (propertyInfo.SetMethod != null)
+                {
+                    propertyInfo.SetValue(obj, val);
+                }
+                break;
+            case FieldInfo fieldInfo:
+                fieldInfo.SetValue(obj, val);
+                break;
+        }
+    }
+    
+    public static IEnumerable<FieldInfo> GetAllFields(this Type? t)
+    {
+        return t == null 
+            ? Enumerable.Empty<FieldInfo>() 
+            : t.GetFields(flags).Concat(GetAllFields(t.BaseType));
+    }
+    
+    public static IEnumerable<PropertyInfo> GetAllProperties(this Type? t)
+    {
+        return t == null 
+            ? Enumerable.Empty<PropertyInfo>() 
+            : t.GetProperties(flags).Concat(GetAllProperties(t.BaseType));
+    }
+    
+    public static string GetNameHighlighted(this MemberInfo memInfo)
+    {
+        string color = memInfo switch
+        {
+            PropertyInfo => "55A38E",
+            FieldInfo => "B05DE7",
+            MethodInfo => "FF8000",
+            _ => "FFFFFF"
+        };
+        string name = memInfo switch
+        {
+            PropertyInfo propertyInfo => propertyInfo.Name,
+            FieldInfo fieldInfo => fieldInfo.Name,
+            MethodInfo methodInfo => GetMethodNameHighlighted(methodInfo),
+            _ => "[n]"
+        };
+        
+        return $"<color=#{color}>{name}</color>";
+    }
+
+    private static string GetMethodNameHighlighted(MethodBase method)
+    {
+        if (method.ReflectedType == null)
+        {
+            return "";
+        }
+        
+        string name = method.Name;
+
+        List<string> parameters = new();
+        foreach (ParameterInfo parameterInfo in method.GetParameters())
+        {
+            string parameter = parameterInfo.ParameterType.Name;
+            if (parameter.EndsWith("&"))
+            {
+                parameter = "<color=#158B2E>ref</color> " + parameter[..^1];
             }
+
+            parameters.Add($"<color=#4389BB>{parameter}</color>");
         }
 
-        output = Vector3.zero;
-        return false;
+        return name + "(" + string.Join(",", parameters) + ")";
     }
-    
-    public static string ToSimpleString(this Vector2 vec)
+
+    public static string GetTabName(this object obj)
     {
-        return $"{vec.x} {vec.y}";
+        string objType = obj.GetType().Name;
+        return obj switch
+        {
+            Object o => @$"{objType}\r\n<color=#FFBB00>{o.name}</color>",
+            _ => $"{objType}\r\n"
+        };
     }
     
-    public static string ToSimpleString(this Vector3 vec)
+    // GUI
+    public static bool IsVisible(this UIDocument w)
     {
-        return $"{vec.x} {vec.y} {vec.z}";
+        return w.rootVisualElement.IsVisible();
     }
     
-    public static string ToSimpleString(this Vector4 vec)
+    public static bool IsVisible(this VisualElement v)
     {
-        return $"{vec.x} {vec.y} {vec.z} {vec.w}";
+        return v.style.display == DisplayStyle.Flex;
     }
     
-    public static string ToSimpleString(this Quaternion quaternion)
+    public static void AddRange(this VisualElement v, IEnumerable<VisualElement> elements)
     {
-        return $"{quaternion.x} {quaternion.y} {quaternion.z} {quaternion.w}";
+        foreach (VisualElement? e in elements)
+        {
+            v.Add(e);
+        }
+    }
+
+    public static void RemoveRange(this VisualElement v, IEnumerable<VisualElement> elements)
+    {
+        foreach (VisualElement e in elements)
+        {
+            v.Remove(e);
+        }
     }
     
+    public static void SetEmptyText(this ListView? listView, string message, string? hexColor = null)
+    {
+        VisualElement? emptyText = listView.Query(className: "unity-list-view__empty-label");
+        if (emptyText is Label l)
+        {
+            l.text = hexColor is null 
+                ? message 
+                : $"<color={hexColor}>{message}</color>";
+        }
+    }
+    
+    // Strings
     public static string? Truncate(this string? value, int maxLength, string truncationSuffix = "…")
     {
         return value?.Trim().Length > maxLength
@@ -137,9 +179,20 @@ public static class Extensions
             : value;
     }
     
-    public static string StripHtml(this string input)
+    public static string StripColor(this string input)
+    {   
+        return Regex.Replace(input, @"(<color=#([0-9A-Fa-f]{3}){1,2}>|<\/color>)", string.Empty);
+    }
+
+    // Game Objects and Components
+    public static GameObject? GetGameObject(this object obj)
     {
-        return Regex.Replace(input, "<.*?>", string.Empty);
+        return obj switch
+        {
+            GameObject g => g,
+            Component c => c.gameObject,
+            _ => null
+        };
     }
     
     public static string GetPath(this GameObject obj)
@@ -152,52 +205,20 @@ public static class Extensions
         }
         return path;
     }
-
-    public static void Add(this Dictionary<string, Scene> scenes, Scene? s)
+    
+    public static Component? GetComponentByType(this GameObject candidate, string compTargetType)
     {
-        if (s is null)
+        foreach (Component c in candidate.GetComponents<Component>())
         {
-            return;
-        }
-        
-        scenes.Add(s.Value.name, s.Value);
-    }
+            string curType = c.GetType().ToString().Split(".").Last().Trim();
+            if (!string.Equals(compTargetType, curType, StringComparison.CurrentCultureIgnoreCase))
+            {
+                continue;
+            }
 
-    public static IEnumerable<GameObject> GetChildren(this GameObject obj)
-    {
-        List<GameObject> objects = new();
-        foreach (Transform t in obj.transform)
-        {
-            objects.Add(t.gameObject);
+            return c;
         }
 
-        return objects;
-    }
-
-    public static bool IsVisible(this VisualElement element)
-    {
-        return element.style.display == new StyleEnum<DisplayStyle>(DisplayStyle.Flex);
-    }
-
-    public static void SetVisible(this VisualElement element, bool isVisible)
-    {
-        element.style.display = isVisible 
-            ? new StyleEnum<DisplayStyle>(DisplayStyle.Flex) 
-            : new StyleEnum<DisplayStyle>(DisplayStyle.None);
-    }
-
-    public static void ToggleVisible(this VisualElement element)
-    {
-        element.SetVisible(!element.IsVisible());
-    }
-
-    public static void Log(object? msg)
-    {
-        if (msg is null)
-        {
-            return;
-        }
-
-        Debug.Log($"{Reflektor.ModName}: {msg}");
+        return null;
     }
 }
