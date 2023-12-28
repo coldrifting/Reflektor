@@ -6,9 +6,8 @@ namespace Reflektor;
 public enum DisplayFlags
 {
     None = 0,
-    ReadOnly = 1,
-    Properties = 2,
-    Fields = 4,
-    Methods = 8,
-    All = ReadOnly | Properties | Fields | Methods
+    Properties = 1,
+    Fields = 2,
+    Methods = 4,
+    All = None | Properties | Fields | Methods
 }

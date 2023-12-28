@@ -107,7 +107,7 @@ ListView {
 }
 
 #PathInput {
-	font-size: 13px;
+	font-size: 12px;
 
 	.unity-text-element {
 		padding-left: 2px;
@@ -200,6 +200,7 @@ ListView {
 
 #InspectorControls {
 	align-items: center;
+	margin: 0px;
 	GroupBox {
 		min-height: 0px;
 		margin: 0px;
@@ -221,11 +222,11 @@ ListView {
 	}
 	#PropertyToggle {
 		> Label {
-			color: #529D89;
+			color: #3D675B;
 		}
 		&:hover > Label {
-			color: white;
-			background-color: #3D675B;
+			color: #529D89;
+			background-color: rgba(1,1,1,0.5);
 		}
 		&:checked > Label {
 			color: white;
@@ -241,8 +242,8 @@ ListView {
 			color: #673689;
 		}
 		&:hover > Label {
-			color: white;
-			background-color: #9951C9;
+			color: #9951C9;
+			background-color: rgba(1,1,1,0.5);
 		}
 		&:checked > Label {
 			color: white;
@@ -258,8 +259,8 @@ ListView {
 			color: #894404;
 		}
 		&:hover > Label {
-			color: white;
-			background-color: #CE670E;
+			color: #CE670E;
+			background-color: rgba(1,1,1,0.5);
 		}
 		&:checked > Label {
 			color: white;
@@ -270,30 +271,31 @@ ListView {
 			background-color: #DE771E;
 		}
 	}
-	#ReadOnlyToggle {
-		&:hover > Label {
-			background-color: #555555;
-		}
-		&:checked > Label {
-			background-color: #444444;
-		}
-		&:checked:hover > Label {
-			background-color: #666666;
-		}
-	}
 	#AutoRefreshToggle {
+		> Label {
+			color: #005588;
+		}
 		&:hover > Label {
-			background-color: #005588;
+			color: #006699;
+			background-color: rgba(1,1,1,0.5);
 		}
 		&:checked > Label {
+			color: white;
 			background-color: #004477;
 		}
 		&:checked:hover > Label {
+			color: white;
 			background-color: #006699;
 		}
 	}
-	#SearchInput {
-		width: 350px;
+	#RefreshButton {
+		padding: 2px 6px;
+		border-width: 1;
+		height: 28px;
+	}
+	#FilterInput {
+		width: 500px;
+		font-size: 12px;
 	}
 }
 
@@ -309,10 +311,16 @@ ListView {
 	> VisualElement {
 		//max-width: 200px;
 		&.focused {
-			background-color: #118855;
+			background-color: #115588;
 			> Label {
 				color: white;
 			}
+		}
+		&:hover {
+			background-color: rgba(255,255,255,0.1);
+		}
+		&.focused:hover {
+			background-color: #226699;
 		}
 		background-color: rgba(0,0,0,0.25);
 		flex-direction: row;
@@ -349,51 +357,101 @@ ListView {
 }
 
 #InspectorContent {
-	.BaseElement {
-		font-size: 11px;
-		Label {
-			height: 28px;
-			-unity-text-align: middle-left;
-		}
-		TextField {
-			padding: 0px;
-			margin: 0px;
-			min-width: 150px;
-			height: 28px;
-			flex-shrink: 1;
-		}
+	flex-grow: 1;
+	flex-shrink: 1;
+	font-size: 11px;
+
+	width: 100%;
+	min-width: 100%;
+	max-width: 100%;
+
+	Label {
+		height: 28px;
+		-unity-text-align: middle-left;
+	}
+	.input-control {
+		flex-direction: row;
 		Button {
 			height: 24px;
 			margin: 2px;
 			font-size: 11px;
 		}
-		DropdownField {
-			margin: 2px;
+		> Button {
+			min-width: 120px;
+			margin-right: 12px;
+			flex-shrink: 1;
 		}
-		TextField > #unity-text-input {
+		> VisualElement {
+			flex-shrink: 1;
+			width: 50%;
+		}
+		> VisualElement > VisualElement > Toggle {
+			width: 100%;
+		}
+		Toggle {
+			padding: 0px;
+			> .unity-toggle__input {
+				margin-top: 2px;
+				height: 22px;
+				> .unity-toggle__checkmark {
+					height: 18px;
+				}
+			}
+		}
+		DropdownField,
+		EnumField {
+			flex-shrink: 1;
+			width: 50%;
 			padding: 0px;
 			margin: 2px;
+			.unity-popup-field__input,
+			.unity-enum-field__input {
+				height: 24px;
+				font-size: 11px;
+				padding: 3px 10px 3px 10px;
+			}
 		}
-		TextField > #unity-text-input > .unity-text-element {
-			height: 24px;
-			padding-bottom: 3px;
-			padding-left: 6px;
+		TextField {
+			padding: 0px;
+			margin: 0px;
+			min-width: 50%;
+			flex-shrink: 1;
+			height: 28px;
+			flex-shrink: 1;
+			> #unity-text-input {
+				padding: 0px;
+				margin: 2px;
+				> .unity-text-element {
+					height: 24px;
+					padding-bottom: 3px;
+					padding-left: 6px;
+				}
+			}
 		}
-		flex-direction: row;
-
-		width: 100%;
-		min-width: 100%;
-		max-width: 100%;
+		.color-preview {
+			max-width: 20px;
+			height: 20px;
+			background-color: red;
+			border-color: #444444;
+			border-width: 1px;
+			border-radius: 6px;
+			margin-top: 4px;
+			margin-left: -24px;
+		}
+		.container-expanded {
+			flex-direction: column;
+			flex-grow: 1;
+			flex-shrink: 1;
+			> .input-control > TextField {
+				width: 100%;
+				flex-shrink: 1;
+				flex-grow: 1;
+			}
+		}
+		.method-output {
+			flex-shrink: 1;
+			flex-grow: 1;
+			white-space: normal;
+		}
 	}
-	DropdownField {
-		padding: 0px;
-		margin: 1px;
-	}
-	.unity-popup-field__input,
-	.unity-enum-field__input {
-		height: 24px;
-		font-size: 11px;
-		padding: 3px 10px 3px 10px;
-	}
-	flex-grow: 1;
 }

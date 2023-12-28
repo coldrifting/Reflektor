@@ -154,7 +154,7 @@ public class BrowserValues
             _componentList.ClearSelection();
             
             _componentList.Rebuild();
-            Utils.SetListViewEmptyText(_componentList, "(No Object Selected)", "#777777");
+            _componentList.SetEmptyText("(No Object Selected)", "#777777");
 
             foreach (TextField? input in _inputs)
             {
@@ -165,7 +165,7 @@ public class BrowserValues
             _activeToggle.SetValueWithoutNotify(obj != null && obj.gameObject.activeSelf);
         };
         
-        Reflektor.PropertyChangedEvent += propObj =>
+        Reflektor.PropertyChangedEvent += (propObj, _) =>
         {
             if (propObj is not GameObject propObjG || propObjG != _browser.Current)
             {
@@ -188,7 +188,7 @@ public class BrowserValues
             return;
         }
         
-        bool valid = Utils.TryParse(textField.value, out Vector3 vec);
+        bool valid = Parsing.TryParse(textField.value, out Vector3 vec);
         switch (textField.name)
         {
             case LabelName:
@@ -255,19 +255,19 @@ public class BrowserValues
                 break;
             case LabelPos:
                 textField.SetValueWithoutNotify(_useAbsolutePosition
-                    ? Utils.ToSimpleString(_browser.Current.transform.position)
-                    : Utils.ToSimpleString(_browser.Current.transform.localPosition));
+                    ? Parsing.ToSimpleString(_browser.Current.transform.position)
+                    : Parsing.ToSimpleString(_browser.Current.transform.localPosition));
 
                 break;
             case LabelScale:
-                textField.SetValueWithoutNotify(Utils.ToSimpleString(_browser.Current.transform.localScale));
+                textField.SetValueWithoutNotify(Parsing.ToSimpleString(_browser.Current.transform.localScale));
                 break;
             case LabelSize:
                 if (RectTransform is not null)
                 {
                     textField.Show();
                     textField.SetValueWithoutNotify(
-                        Utils.ToSimpleString(
+                        Parsing.ToSimpleString(
                         CanvasScaler is not null
                             ? CanvasScaler.referenceResolution
                             : RectTransform.sizeDelta));
@@ -282,7 +282,7 @@ public class BrowserValues
                 if (RectTransform is not null)
                 {
                     textField.Show();
-                    textField.SetValueWithoutNotify(Utils.ToSimpleString(RectTransform.anchoredPosition));
+                    textField.SetValueWithoutNotify(Parsing.ToSimpleString(RectTransform.anchoredPosition));
                 }
                 else
                 {

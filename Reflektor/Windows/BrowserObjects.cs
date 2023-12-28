@@ -103,7 +103,7 @@ public class BrowserObjects
         _objectList.ClearSelection();
         _objectList.Rebuild();
         _objectList.RefreshItems();
-        Utils.SetListViewEmptyText(_objectList, "(No Child Transforms)", "#777777");
+        _objectList.SetEmptyText("(No Child Transforms)", "#777777");
     }
 
     private void GetScenes()

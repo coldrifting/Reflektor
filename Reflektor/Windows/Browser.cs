@@ -92,6 +92,9 @@ public class Browser : BaseWindow
                 Refresh(_raycastObjects[i]);
             });
         };
+
+        // Testing
+        Window.rootVisualElement.Hide();
     }
 
     private void FindGameObject(string newPath)
@@ -178,7 +181,7 @@ public class Browser : BaseWindow
         _raycastObjects.AddRange(objects);
 
         _raycastList.Rebuild();
-        Utils.SetListViewEmptyText(_raycastList, "(No Objects Found)", "#FF7700");
+        _raycastList.SetEmptyText("(No Objects Found)", "#FF7700");
     }
 
     private void HideRaycastResults()

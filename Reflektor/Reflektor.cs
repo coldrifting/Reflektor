@@ -25,18 +25,20 @@ public class Reflektor : BaseSpaceWarpPlugin
     public static Reflektor? Instance;
 
     // Events
-    public static event Action<object>? PropertyChangedEvent;
+    public static event Action<object, bool>? PropertyChangedEvent;
     
     // Windows
     private Inspector? _inspector;
     private Browser? _browser;
 
     // Config
-    private ConfigEntry<KeyCode>? _showHideToggleShortcut;
+    private ConfigEntry<KeyCode>? _showHideToggleShortcutBrowser;
+    private ConfigEntry<KeyCode>? _showHideToggleShortcutInspector;
     private ConfigEntry<KeyCode>? _raycastShortcut;
 
     private KeyboardShortcut? _raycastShortcutKey;
-    private KeyboardShortcut? _showHideToggleKey;
+    private KeyboardShortcut? _showHideToggleKeyBrowser;
+    private KeyboardShortcut? _showHideToggleKeyInspector;
 
     public override void OnInitialized()
     {
@@ -53,16 +55,21 @@ public class Reflektor : BaseSpaceWarpPlugin
         SpaceWarp.API.Game.Messages.StateChanges.GameStateChanged += (_, _, _) => Utils.ResetSorting();
         SpaceWarp.API.Game.Messages.StateChanges.GameStateChanged += (_, _, _) => RefreshBrowser();
         
-        _showHideToggleShortcut = Config.Bind(
+        _showHideToggleShortcutBrowser = Config.Bind(
+            new ConfigDefinition("Settings", "Toggle Browser UI Key"),
+            KeyCode.Q,
+            new ConfigDescription("Toggle the browser UI with: this key + L SHIFT + L ALT"));
+        
+        _showHideToggleShortcutInspector = Config.Bind(
             new ConfigDefinition("Settings", "Toggle Inspector UI Key"),
-            KeyCode.U,
-            new ConfigDescription("Toggle the inspector UI with this key + L SHIFT + L ALT"));
+            KeyCode.E,
+            new ConfigDescription("Toggle the inspector UI with: this key + L SHIFT + L ALT"));
 
         _raycastShortcut = Config.Bind(
             "Settings",
             "Fire Raycast Key",
             KeyCode.R,
-            "Fire a raycast with this key + L SHIFT + L ALT");
+            "Fire a raycast with: this key + L SHIFT + L ALT");
 
         Config.SettingChanged += (_, _) => SetKeyboardShortcuts();
         Config.ConfigReloaded += (_, _) => SetKeyboardShortcuts();
@@ -78,7 +85,7 @@ public class Reflektor : BaseSpaceWarpPlugin
             return;
         }
 
-        var coroutine = RefreshBrowserAfterWait(3);
+        IEnumerator coroutine = RefreshBrowserAfterWait(3);
         Instance.StartCoroutine(coroutine);
     }
 
@@ -93,9 +100,14 @@ public class Reflektor : BaseSpaceWarpPlugin
 
     public void Update()
     {
-        if (_showHideToggleKey != null && _showHideToggleKey.Value.IsDown())
+        if (_showHideToggleKeyBrowser != null && _showHideToggleKeyBrowser.Value.IsDown())
         {
             _browser?.ToggleDisplay();
+        }
+        
+        if (_showHideToggleKeyInspector != null && _showHideToggleKeyInspector.Value.IsDown())
+        {
+            _inspector?.ToggleDisplay();
         }
 
         if (_raycastShortcutKey != null && _raycastShortcutKey.Value.IsDown())
@@ -106,48 +118,49 @@ public class Reflektor : BaseSpaceWarpPlugin
 
     public void FireRay()
     {
-        PointerEventData pointerEventData = new PointerEventData(null);
+        PointerEventData pointerEventData = new(null);
         pointerEventData.position = Input.mousePosition;
-        List<RaycastResult> raycastResults = new List<RaycastResult>();
+        var raycastResults = new List<RaycastResult>();
         EventSystem.current.RaycastAll(pointerEventData, raycastResults);
 
-        List<GameObject> objects = raycastResults.Select(result => result.gameObject).ToList();
-
-        Log(objects);
+        var objects = raycastResults.Select(result => result.gameObject).ToList();
 
         _browser?.ShowRaycastResults(objects);
     }
 
-    public static void FirePropertyChangedEvent(object obj)
+    public static void FirePropertyChangedEvent(object obj, bool triggeredManually = false)
     {
         if (Instance is null)
         {
             return;
         }
 
-        Instance.StartCoroutine(FirePropertyChangeEventAfterWait(obj, 3));
+        Instance.StartCoroutine(FireEventAfterWait((o, b) =>
+        {
+            GameObject? g = o.GetGameObject();
+            if (g is not null)
+            {
+                PropertyChangedEvent?.Invoke(g, b);
+                foreach (Component c in g.GetComponents<Component>())
+                {
+                    PropertyChangedEvent?.Invoke(c, b);
+                }
+            }
+            else
+            {
+                PropertyChangedEvent?.Invoke(o, b);
+            }
+        }, obj, triggeredManually, 3));
     }
 
-    private static IEnumerator FirePropertyChangeEventAfterWait(object obj, int numFrames)
+    private static IEnumerator FireEventAfterWait(Action<object, bool> eventAction, object obj, bool b, int numFrames)
     {
         for (int i = 0; i < numFrames; i++)
         {
             yield return 0;
         }
         
-        GameObject? g = Utils.GetGameObject(obj);
-        if (g is not null)
-        {
-            PropertyChangedEvent?.Invoke(g);
-            foreach (Component v in g.GetComponents<Component>())
-            {
-                PropertyChangedEvent?.Invoke(v);
-            }
-        }
-        else
-        {
-            PropertyChangedEvent?.Invoke(obj);
-        }
+        eventAction.Invoke(obj, b);
     }
 
     public static void Inspect(object? obj)
@@ -166,10 +179,16 @@ public class Reflektor : BaseSpaceWarpPlugin
                 new KeyboardShortcut(_raycastShortcut.Value, KeyCode.LeftShift, KeyCode.LeftAlt);
         }
 
-        if (_showHideToggleShortcut != null)
+        if (_showHideToggleShortcutBrowser != null)
         {
-            _showHideToggleKey =
-                new KeyboardShortcut(_showHideToggleShortcut.Value, KeyCode.LeftShift, KeyCode.LeftAlt);
+            _showHideToggleKeyBrowser =
+                new KeyboardShortcut(_showHideToggleShortcutBrowser.Value, KeyCode.LeftShift, KeyCode.LeftAlt);
+        }
+
+        if (_showHideToggleShortcutInspector != null)
+        {
+            _showHideToggleKeyInspector =
+                new KeyboardShortcut(_showHideToggleShortcutInspector.Value, KeyCode.LeftShift, KeyCode.LeftAlt);
         }
     }
 

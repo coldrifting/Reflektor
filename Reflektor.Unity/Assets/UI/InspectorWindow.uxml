@@ -3,38 +3,91 @@
     <ui:VisualElement name="InspectorWindowRoot" class="root">
         <ui:ScrollView name="TabBar" mode="Horizontal" vertical-scroller-visibility="Hidden" horizontal-scroller-visibility="Hidden">
             <ui:VisualElement class="focused">
-                <ui:Label tabindex="-1" text="Transform&#10;LaunchpadFileDialog" display-tooltip-when-elided="true" />
+                <ui:Label tabindex="-1" text="Transform&#10;&lt;color=#fb0&gt;LaunchpadFileDialog&lt;/color&gt;" display-tooltip-when-elided="true" />
                 <ui:Button text="✗" display-tooltip-when-elided="true" />
             </ui:VisualElement>
             <ui:VisualElement>
-                <ui:Label tabindex="-1" text="type goes here&#10;a very long long long long long long long long long long label" style="overflow: hidden; -unity-text-align: middle-left;" />
+                <ui:Label tabindex="-1" text="type goes here&#10;&lt;color=#ff7700&gt;a very long long long long long long long long long long label" style="overflow: hidden; -unity-text-align: middle-left;" />
                 <ui:Button text="✗" display-tooltip-when-elided="true" />
             </ui:VisualElement>
         </ui:ScrollView>
         <ui:TextField picking-mode="Ignore" value="/" name="PathInput" is-delayed="true" />
         <ui:GroupBox name="InspectorControls" style="display: flex;">
-            <ui:TextField picking-mode="Ignore" label="Filter" name="SearchInput" is-delayed="false" />
+            <ui:TextField picking-mode="Ignore" label="Filter" name="FilterInput" is-delayed="false" />
             <ui:GroupBox name="MemberControls" style="display: flex;">
                 <ui:Toggle label="Properties" name="PropertyToggle" value="true" />
                 <ui:Toggle label="Fields" name="FieldToggle" value="true" />
                 <ui:Toggle label="Methods" name="MethodToggle" value="true" />
-                <ui:VisualElement class="spacer" />
-                <ui:Toggle label="Read Only" name="ReadOnlyToggle" value="true" />
             </ui:GroupBox>
             <ui:GroupBox name="RefreshControls" style="display: flex;">
-                <ui:Toggle label="Auto Refresh" name="AutoRefreshToggle" />
+                <ui:Toggle label="Auto" name="AutoRefreshToggle" />
                 <ui:Button text="Refresh" display-tooltip-when-elided="true" name="RefreshButton" />
             </ui:GroupBox>
         </ui:GroupBox>
-        <ui:VisualElement name="InspectorContent">
-            <ui:ScrollView>
-                <ui:VisualElement class="BaseElement">
-                    <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
-                    <ui:TextField picking-mode="Ignore" value="dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" />
-                    <ui:Button text="Button" display-tooltip-when-elided="true" />
-                    <ui:DropdownField index="-1" choices="System.Collections.Generic.List`1[System.String]" />
+        <ui:ScrollView name="InspectorContent">
+            <ui:VisualElement name="InputBool" class="input-control">
+                <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                <ui:Toggle class="toggle" />
+            </ui:VisualElement>
+            <ui:VisualElement name="InputEnum" class="input-control">
+                <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                <ui:EnumField type="UnityEngine.TextAlignment, UnityEngine.TextRenderingModule" value="Center" />
+            </ui:VisualElement>
+            <ui:VisualElement name="InputEnumFlags" class="input-control">
+                <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                <ui:VisualElement>
+                    <ui:Button text="Enum Value" display-tooltip-when-elided="true" class="expand-button" />
+                    <ui:VisualElement class="container-expanded" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0);">
+                        <ui:Toggle label="Toggle" class="toggle" />
+                        <ui:Toggle label="Toggle" class="toggle" />
+                        <ui:Toggle label="Toggle" class="toggle" />
+                        <ui:Toggle label="Toggle" class="toggle" />
+                        <ui:Button text="Apply" display-tooltip-when-elided="true" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
-            </ui:ScrollView>
-        </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="InputCollection" class="input-control">
+                <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                <ui:VisualElement>
+                    <ui:Button text="Button" display-tooltip-when-elided="true" />
+                    <ui:VisualElement class="container-expanded" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0);">
+                        <ui:VisualElement name="InputText" class="input-control">
+                            <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                            <ui:TextField picking-mode="Ignore" value="filler text" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="InputText" class="input-control">
+                            <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                            <ui:TextField picking-mode="Ignore" value="filler text" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="InputText" class="input-control">
+                            <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                            <ui:TextField picking-mode="Ignore" value="filler text" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="InputText" class="input-control">
+                <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                <ui:TextField picking-mode="Ignore" value="filler text" />
+            </ui:VisualElement>
+            <ui:VisualElement name="InputObject" class="input-control">
+                <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                <ui:Button text="A very long input text value here is show" display-tooltip-when-elided="true" />
+            </ui:VisualElement>
+            <ui:VisualElement name="InputMethod" class="input-control">
+                <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                <ui:Button text="Invoke" display-tooltip-when-elided="true" />
+                <ui:Label tabindex="-1" text="Result -&gt; int                                                                          sdfsdfsfsdfsdfsd                                                 dsfsdfsdfsdf sdfsdf sdf sdfdsfsdfsdf" display-tooltip-when-elided="true" class="method-output" />
+            </ui:VisualElement>
+            <ui:VisualElement name="InputTextColor" class="input-control">
+                <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                <ui:TextField picking-mode="Ignore" value="filler text" />
+                <ui:VisualElement picking-mode="Ignore" class="color-preview" />
+            </ui:VisualElement>
+            <ui:VisualElement name="InputText" class="input-control">
+                <ui:Label tabindex="-1" text="Label" display-tooltip-when-elided="true" />
+                <ui:TextField picking-mode="Ignore" value="filler text this is a realy long lon glong long slsdjfldsjk glojsdljflj flsjdlfjslkjflsjdlf  onlong long line sdljfljsldfjls jlsjdflkjsldjfk slkfdjslkjflsjdlkfjlsjdlfjlsjlfkj" />
+            </ui:VisualElement>
+        </ui:ScrollView>
     </ui:VisualElement>
 </ui:UXML>
