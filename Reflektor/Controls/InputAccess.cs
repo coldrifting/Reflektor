@@ -54,7 +54,7 @@ public static class InputAccess
             Quaternion => new InputTextQuaternion(name, info, sourceObj, getSource, setSource),
             Color => new InputTextColor(name, info, sourceObj, getSource, setSource),
             Enum enumVal => GetEnumType(name, enumVal, info, sourceObj, getSource, setSource),
-            IEnumerable collection => new InputCollection(name, collection, sourceObj, info, getSource, null), // TODO
+            IEnumerable collection => new InputCollection(name, collection, sourceObj, info, getSource, null),
             MethodInfo methodInfo => new InputMethod(methodInfo, sourceObj, name, getSource),
             _ => new InputObject(name, info, sourceObj, value, getSource),
         };

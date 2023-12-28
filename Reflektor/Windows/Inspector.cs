@@ -9,7 +9,6 @@ using UnityEngine.UIElements;
 using System.Runtime.CompilerServices;
 using Reflektor.Controls;
 using Color = UnityEngine.Color;
-using Object = UnityEngine.Object;
 
 namespace Reflektor.Windows;
 
@@ -111,17 +110,6 @@ public class Inspector : BaseWindow
         _inspectorContent.Clear();
         
         Window.Hide();
-        
-        // Add Default Tabs
-        SwitchTab(GameObject.Find("/GameManager"));
-
-        GameObject g = new GameObject("[Testing]");
-        Object.DontDestroyOnLoad(g);
-        TestClass t = g.AddComponent<TestClass>();
-        if (t is not null)
-        {
-            SwitchTab(t);
-        }
     }
 
     private IEnumerator RefreshAutoCycle() {
@@ -284,11 +272,6 @@ public class Inspector : BaseWindow
         }
 
         inputs.Sort();
-
-        foreach (InputBase b in inputs)
-        {
-            Reflektor.Log($"{b.Prefix}.{b.Name}");
-        }
         
         return inputs;
     }

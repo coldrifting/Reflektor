@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using RTG;
 using UitkForKsp2.API;
 using UnityEngine;
@@ -30,7 +29,7 @@ public class Browser : BaseWindow
     
     private bool _isParentEditMode;
 
-    public Browser(GameObject parent, Inspector inspector) : base(parent, "BrowserWindow")
+    public Browser(GameObject parent) : base(parent, "BrowserWindow")
     {
         // Find GUI elements
         _path = Window.rootVisualElement.Q<TextField>(name: "PathInput");
@@ -72,7 +71,7 @@ public class Browser : BaseWindow
         var browserObjects = new BrowserObjects(this, Window.rootVisualElement);
         browserObjects.Setup();
         
-        _browserValues = new BrowserValues(this, Window.rootVisualElement, inspector);
+        _browserValues = new BrowserValues(this, Window.rootVisualElement);
         _browserValues.Setup();
         
         // Setup raycast

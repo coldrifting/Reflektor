@@ -20,7 +20,7 @@ public class Reflektor : BaseSpaceWarpPlugin
 {
     [PublicAPI] public const string ModGuid = "Reflektor";
     [PublicAPI] public const string ModName = "Reflektor";
-    [PublicAPI] public const string ModVer = "0.1.0.0";
+    [PublicAPI] public const string ModVer = "0.2.0.0";
 
     public static Reflektor? Instance;
 
@@ -46,11 +46,12 @@ public class Reflektor : BaseSpaceWarpPlugin
         Log("Initializing");
         Instance = this;
 
-        GameObject rootGameObject = new GameObject("_InspectorRoot");
+        GameObject rootGameObject = new("_InspectorRoot");
         DontDestroyOnLoad(rootGameObject);
 
+        _browser = new Browser(rootGameObject);
         _inspector = new Inspector(rootGameObject);
-        _browser = new Browser(rootGameObject, _inspector);
+        
         
         SpaceWarp.API.Game.Messages.StateChanges.GameStateChanged += (_, _, _) => Utils.ResetSorting();
         SpaceWarp.API.Game.Messages.StateChanges.GameStateChanged += (_, _, _) => RefreshBrowser();
@@ -167,7 +168,12 @@ public class Reflektor : BaseSpaceWarpPlugin
     {
         if (Instance is not null && obj is not null)
         {
-            Instance._inspector?.SwitchTab(obj);
+            if (Instance._inspector != null)
+            {
+                Instance._inspector.SwitchTab(obj);
+                Instance._inspector.Window.rootVisualElement.BringToFront();
+                Reflektor.Log("TESTING");
+            }
         }
     }
 
@@ -200,14 +206,14 @@ public class Reflektor : BaseSpaceWarpPlugin
         }
         StringBuilder sb = new();
         string list = sb.AppendJoin(", ", msg).ToString();
-        Debug.Log($"<color=#00FF77>{ModName}: {list}</color>");
+        Debug.Log($"{ModName}: {list}");
     }
 
     private static void Log(IEnumerable<object>? msg)
     {
         StringBuilder sb = new();
         string list = sb.AppendJoin(", ", msg).ToString();
-        Debug.Log($"<color=#00FF77>{ModName}: {list}</color>");
+        Debug.Log($"{ModName}: {list}");
     }
 
     public static Color ColorFromHex(uint hexNum)

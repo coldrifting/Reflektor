@@ -17,7 +17,6 @@ public class BrowserValues
     
     // Data
     private readonly Browser _browser;
-    private readonly Inspector _inspector;
     
     private bool _useAbsolutePosition;
     private List<Component> Components { get; } = new();
@@ -31,10 +30,9 @@ public class BrowserValues
     private const string LabelSize = "SizeInput";
     private const string LabelAnchor = "AnchorInput";
 
-    public BrowserValues(Browser browser, VisualElement root, Inspector inspector)
+    public BrowserValues(Browser browser, VisualElement root)
     {
         _browser = browser;
-        _inspector = inspector;
 
         TextField? nameInput = root.Q<TextField>(name: "NameInput");
         TextField? posInput = root.Q<TextField>(name: "PosInput");
@@ -111,7 +109,7 @@ public class BrowserValues
                 return;
             }
             
-            _inspector.SwitchTab(obj);
+            Reflektor.Inspect(obj);
         };
         
         // View game object on right click of component list
@@ -124,7 +122,7 @@ public class BrowserValues
 
             if (_browser.Current is not null)
             {
-                _inspector.SwitchTab(_browser.Current.gameObject);
+                Reflektor.Inspect(_browser.Current.gameObject);
             }
         });
         

@@ -8,7 +8,7 @@ namespace Reflektor.Windows;
 public class BaseWindow
 {
     private const string BundlePath = $"{Reflektor.ModGuid}/reflektor_ui/ui";
-    protected UIDocument Window { get; }
+    public UIDocument Window { get; }
 
     protected BaseWindow(GameObject parent, string name)
     {
@@ -30,6 +30,6 @@ public class BaseWindow
 
         Window = UitkForKsp2.API.Window.Create(winOptions, browserWindowUxml);
 
-        Window.rootVisualElement.RegisterCallback((MouseDownEvent _) => { Window.rootVisualElement.BringToFront(); });
+        //Window.rootVisualElement.RegisterCallback((MouseDownEvent _) => { Window.rootVisualElement.BringToFront(); });
     }
 }
