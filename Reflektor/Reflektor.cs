@@ -20,7 +20,7 @@ public class Reflektor : BaseSpaceWarpPlugin
 {
     [PublicAPI] public const string ModGuid = "Reflektor";
     [PublicAPI] public const string ModName = "Reflektor";
-    [PublicAPI] public const string ModVer = "0.2.0.0";
+    [PublicAPI] public const string ModVer = "0.2.1.0";
     
     // Instance stuff
     public static Reflektor? Instance;
