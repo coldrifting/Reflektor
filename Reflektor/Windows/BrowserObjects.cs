@@ -19,14 +19,11 @@ public class BrowserObjects
     private readonly ListView _objectList;
     
     // Data
-    private readonly Browser _browser;
     private readonly Dictionary<string, Scene> _scenes = new();
     private readonly List<GameObject> _objects = new();
 
-    public BrowserObjects(Browser browser, VisualElement root)
+    public BrowserObjects(VisualElement root)
     {
-        _browser = browser;
-        
         _sceneChangeDropdown = root.Q<DropdownField>(name: "SceneChangeDropdown");
         _upBtn = root.Q<Button>(name: "UpBtn");
         _refreshBtn = root.Q<Button>(name: "RefreshBtn");
@@ -42,10 +39,10 @@ public class BrowserObjects
         {
             _sceneChangeDropdown.choices.Add(scene.name);
         }
-        _sceneChangeDropdown.RegisterValueChangedCallback(_ => _browser.Refresh(null));
+        _sceneChangeDropdown.RegisterValueChangedCallback(_ => Browser.Refresh(null));
         _sceneChangeDropdown.SetValueWithoutNotify(_sceneChangeDropdown.choices.Last());
         
-        _upBtn.clicked += _browser.Up;
+        _upBtn.clicked += Browser.Up;
         _refreshBtn.clicked += UpdateObjects;
         
         _objectList.itemsSource = _objects;
@@ -81,14 +78,14 @@ public class BrowserObjects
         
         // This event must be set for the items chosen one to work
         _objectList.selectedIndicesChanged += _ => { };
-        _objectList.itemsChosen += enumerable => _browser.Refresh(enumerable.First() as GameObject);
+        _objectList.itemsChosen += enumerable => Browser.Refresh(enumerable.First() as GameObject);
         
-        _browser.CurrentChangedEvent += UpdateObjects;
+        Browser.CurrentChangedEvent += UpdateObjects;
     }
 
     private void UpdateObjects()
     {
-        UpdateObjects(_browser.Current);
+        UpdateObjects(Browser.Current);
     }
 
     private void UpdateObjects(GameObject? obj)

@@ -7,58 +7,52 @@ namespace Reflektor.Controls;
 
 public abstract class InputBase : VisualElement, IComparable
 {
-    public delegate object? GetSource(); // source -> value -> control
-    public delegate void SetSource(object value); // control -> source
+    protected SelectKey Key { get; }
+    protected string Name { get; }
 
-    protected readonly GetSource _getSource;
-    protected readonly SetSource? _setSource;
-    
-    public string Name { get; }
-    public string Prefix { get; }
-    
-    public object SourceObj { get; }
-    public MemberInfo? Info { get; }
+    protected readonly Info.GetMethod Getter;
+    protected readonly Info.SetMethod? Setter;
+
+    protected readonly bool IsInsideCollection;
+
+    private readonly MemberInfo? _info;
+    private readonly int _sortOrder;
 
     private readonly Label _labelElement = new();
-    public int LabelLength => _labelElement.text.StripColor().Length;
 
-    protected InputBase(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource)
+    protected InputBase(Info info)
     {
-        Info = info;
-        SourceObj = sourceObj;
-        _getSource = getSource;
-        _setSource = setSource;
-        
-        AddToClassList("input-control");
-        Name = label.StripColor();
-        string prefix = info is not null ? $"<color=#3AE2A9>{info.DeclaringType?.Name}</color>." : "";
-        Prefix = prefix.StripColor();
-        _labelElement.text = $"{prefix}{label}";
+        _labelElement.text = info.FormatName;
         Add(_labelElement);
+        AddToClassList("input-control");
         
-        style.flexDirection = FlexDirection.Row;
-        
-        Reflektor.PropertyChangedEvent += (_, _) => SetField(_getSource.Invoke());
-    }
+        Key = info.Key;
+        Name = info.Name;
+        Getter = info.Getter;
+        Setter = info.Setter;
+        IsInsideCollection = info.IsInCollection;
+        _info = info.MemInfo;
+        _sortOrder = info.SortOrder;
 
-    protected void Init()
-    {
-        SetField(_getSource.Invoke());
-    }
-
-    protected void Refresh()
-    {
-        Reflektor.FirePropertyChangedEvent(SourceObj);
-    }
-
-    public void SetLabelWidth(int charWidth)
-    {
-        _labelElement.style.width = 7 * charWidth;
+        Reflektor.PropertyChangedEvent += (refreshKey, _) =>
+        {
+            if (refreshKey.Equals(Key))
+            {
+                PullChanges();
+            }
+        };
     }
     
-    public void Filter(object current, DisplayFlags flags, string filterString)
+    public abstract void PullChanges();
+    
+    protected void Refresh()
     {
-        if (current != SourceObj)
+        Reflektor.FirePropertyChangedEvent(Key);
+    }
+    
+    public void Filter(SelectKey current, DisplayFlags flags, string filterString)
+    {
+        if (!Equals(current, Key))
         {
             this.Hide();
         }
@@ -68,70 +62,31 @@ public abstract class InputBase : VisualElement, IComparable
         }
         else
         {
-            bool shouldShow = Info switch
+            this.Display(_info switch
             {
-                FieldInfo => (flags & DisplayFlags.Fields) != 0,
                 PropertyInfo => (flags & DisplayFlags.Properties) != 0,
+                FieldInfo => (flags & DisplayFlags.Fields) != 0,
                 MethodInfo => (flags & DisplayFlags.Methods) != 0,
                 _ => true
-            };
-            
-            if (shouldShow)
-            {
-                this.Show();
-            }
-            else
-            {
-                this.Hide();
-            }
+            });
         }
     }
 
-    protected abstract void SetField(object? value);
+    public void SetLabelWidth(int charWidth)
+    {
+        _labelElement.style.width = 7 * charWidth;
+    }
     
     public int CompareTo(object obj)
     {
         if (obj is InputBase other)
         {
-            if (Info is null || other.Info is null)
-            {
-                return -1;
-            }
-            
-            int m1 = GetMemberSortOrder(Info);
-            int val = m1.CompareTo(GetMemberSortOrder(other.Info));
-            if (val == 0)
-            {
-                int val2 = GetDeclaredTypeDepth(Info).CompareTo(GetDeclaredTypeDepth(other.Info));
-                return val2 == 0 
-                    ? string.Compare(Name, other.Name, StringComparison.Ordinal) 
-                    : val2;
-            }
-
-            return val;
+            int val = _sortOrder.CompareTo(other._sortOrder);
+            return val == 0 
+                ? string.Compare(Name, other.Name, StringComparison.Ordinal) 
+                : val;
         }
 
         return -1;
-    }
-
-    private static int GetMemberSortOrder(MemberInfo info) => info switch
-    {
-        PropertyInfo => 0,
-        FieldInfo => 1,
-        MethodInfo => 2,
-        _ => -1
-    };
-
-    private static int GetDeclaredTypeDepth(MemberInfo info)
-    {
-        int i = 0;
-        Type? t = info.DeclaringType;
-        while (t is not null)
-        {
-            i--;
-            t = t.BaseType;
-        }
-
-        return i;
     }
 }

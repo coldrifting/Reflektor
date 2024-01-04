@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -9,46 +8,43 @@ namespace Reflektor.Controls;
 
 public abstract class InputText<T> : InputBase
 {
-    private readonly TextField _textField = new();
+    protected readonly TextField TextField = new();
 
-    protected InputText(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    protected InputText(Info info) : base (info)
     {
-        _textField.isDelayed = true;
-        Add(_textField);
+        TextField.isDelayed = true;
+        Add(TextField);
         
-        if (setSource is null)
+        if (Setter is null)
         {
-            _textField.isReadOnly = true;
-            _textField.style.color = Color.gray;
-        }
-        else
-        {
-            _textField.RegisterValueChangedCallback(evt =>
-            {
-                if (TryParse(evt.newValue, out T newVal))
-                {
-                    _setSource?.Invoke(newVal);
-                }
-                Refresh();
-            });
+            TextField.isReadOnly = true;
+            TextField.style.color = Color.gray;
         }
 
-        Init();
+        TextField.RegisterValueChangedCallback(_ => PushChanges());
     }
 
-    protected override void SetField(object? newValue)
+    public override void PullChanges()
     {
-        if (newValue is T newT)
+        if (Getter.Invoke() is T newValue)
         {
-            _textField.SetValueWithoutNotify(ToFormattedString(newT));
+            TextField.SetValueWithoutNotify(ToFormattedString(newValue));
         }
+    }
+
+    private void PushChanges()
+    {
+        if (TryParse(TextField.value, out T newVal))
+        {
+            Setter?.Invoke(newVal);
+        }
+        Refresh();
     }
 
     protected abstract string ToFormattedString(T inputVal);
     protected abstract bool TryParse(string inputStr, [NotNullWhen(true)] out T outputVal);
     
-    protected bool TryParseVecGeneric(string input, int length, float defaultVal, out Vector4 output)
+    public static bool TryParseVecGeneric(string input, int length, float defaultVal, out Vector4 output)
     {
         string[] inputs = input.Split(new[]{',', ' '}, StringSplitOptions.RemoveEmptyEntries);
         List<float> comps = new();

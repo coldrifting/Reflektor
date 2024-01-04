@@ -1,8 +1,4 @@
-﻿using System;
-using System.Globalization;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Reflektor.Controls;
@@ -11,8 +7,7 @@ public class InputTextColor : InputText<Color>
 {
     private readonly VisualElement _preview = new();
 
-    public InputTextColor(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public InputTextColor(Info info) : base (info)
     {
         _preview.pickingMode = PickingMode.Ignore;
         _preview.AddToClassList("color-preview");
@@ -20,11 +15,11 @@ public class InputTextColor : InputText<Color>
         Add(_preview);
     }
 
-    protected override void SetField(object? newValue)
+    public override void PullChanges()
     {
-        base.SetField(newValue);
+        base.PullChanges();
 
-        if (newValue is Color color)
+        if (TryParse(TextField.value, out Color color))
         {
             _preview.style.backgroundColor = new Color(color.r, color.g, color.b, 1.0f);
         }
@@ -62,8 +57,7 @@ public class InputTextColor : InputText<Color>
 
 public class InputTextQuaternion : InputText<Quaternion>
 {
-    public InputTextQuaternion(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public InputTextQuaternion(Info info) : base (info)
     {
     }
 
@@ -87,8 +81,7 @@ public class InputTextQuaternion : InputText<Quaternion>
 
 public class InputTextVec4 : InputText<Vector4>
 {
-    public InputTextVec4(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public InputTextVec4(Info info) : base (info)
     {
     }
 
@@ -112,8 +105,7 @@ public class InputTextVec4 : InputText<Vector4>
 
 public class InputTextVec3 : InputText<Vector3>
 {
-    public InputTextVec3(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public InputTextVec3(Info info) : base (info)
     {
     }
 
@@ -137,8 +129,7 @@ public class InputTextVec3 : InputText<Vector3>
 
 public class InputTextVec2 : InputText<Vector2>
 {
-    public InputTextVec2(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public InputTextVec2(Info info) : base (info)
     {
     }
 

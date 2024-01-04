@@ -6,35 +6,21 @@ namespace Reflektor.Controls;
 
 public class InputMethod : InputBase
 {
-    public bool HasParameters => _methodInfo.GetParameters().Length != 0;
-
     private readonly MethodInfo _methodInfo;
+    
     private readonly Button _invokeBtn = new();
     private readonly Label _result = new();
 
-    public InputMethod(MethodInfo methodInfo, object sourceObj, string label, GetSource getSource) 
-        : base(label, methodInfo, sourceObj, getSource, null)
+    public InputMethod(Info info, MethodInfo m) : base(info)
     {
-        _methodInfo = methodInfo;
+        _methodInfo = m;
         
-        if (HasParameters)
+        if (m.GetParameters().Length != 0)
         {
             return;
         }
-
+        
         _invokeBtn.text = "Invoke";
-        _invokeBtn.clicked += () =>
-        {
-            try
-            {
-                object resultObj = methodInfo.Invoke(sourceObj, Array.Empty<object>());
-                _result.text = $"Result: <color=#FF7700>{resultObj}</color>";
-            }
-            catch (Exception e)
-            {
-                _result.text = $"Result: <color=#FF3300>Exception occured: {e.Message}</color>";
-            }
-        };
         _invokeBtn.RegisterCallback((MouseDownEvent evt) =>
         {
             if (evt.button == 1)
@@ -46,14 +32,29 @@ public class InputMethod : InputBase
         _result.AddToClassList("method-output");
         Add(_invokeBtn);
         Add(_result);
-
-        Reflektor.PropertyChangedEvent += (_, b) => _result.text = b ? DefaultText() : _result.text;
         
         _result.text = DefaultText();
+
+        _invokeBtn.clickable = null;
+        _invokeBtn.clicked += () =>
+        {
+            try
+            {
+                object resultObj = m.Invoke(Key.Target, Array.Empty<object>());
+                _result.text = $"Result: <color=#FF7700>{resultObj}</color>";
+            }
+            catch (Exception e)
+            {
+                _result.text = $"Result: <color=#FF3300>Exception occured: {e.Message}</color>";
+            }
+        };
+
+        Reflektor.PropertyChangedEvent += (_, b) => _result.text = b ? DefaultText() : _result.text;
     }
 
-    protected override void SetField(object? value)
+    public override void PullChanges()
     {
+        // Do nothing
     }
 
     private string DefaultText()

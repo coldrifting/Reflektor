@@ -1,35 +1,23 @@
-﻿using System.Reflection;
-using UnityEngine.UIElements;
+﻿using UnityEngine.UIElements;
 
 namespace Reflektor.Controls;
 
 public class InputBool : InputBase
 {
     private readonly Toggle _toggle = new();
-    
-    public InputBool(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource) 
-        : base(label, info, sourceObj, getSource, setSource)
+
+    public InputBool(Info info) : base(info)
     {
         _toggle.AddToClassList("toggle");
         Add(_toggle);
 
-        if (setSource is null)
-        {
-            _toggle.SetEnabled(false);
-        }
-        
-        _toggle.RegisterValueChangedCallback(evt =>
-        {
-            _setSource?.Invoke(evt.newValue);
-            Refresh();
-        });
-
-        Init();
+        _toggle.SetEnabled(Setter is not null);
+        _toggle.RegisterValueChangedCallback(_ => Setter?.Invoke(_toggle.value));
     }
 
-    protected override void SetField(object? value)
+    public override void PullChanges()
     {
-        if (value is bool newBool)
+        if (Getter.Invoke() is bool newBool)
         {
             _toggle.SetValueWithoutNotify(newBool);
         }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Reflektor.Controls;
 using UitkForKsp2.API;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,32 +11,26 @@ namespace Reflektor.Windows;
 
 public class BrowserValues
 {
-    // GUI
-    private readonly List<TextField> _inputs;
-    private readonly Toggle _activeToggle;
-    private readonly ListView _componentList;
-    
-    // Data
-    private readonly Browser _browser;
-    private readonly Inspector _inspector;
-    
-    private bool _useAbsolutePosition;
-    private List<Component> Components { get; } = new();
-    private RectTransform? RectTransform { get; set; }
-    private CanvasScaler? CanvasScaler { get; set; }
-    
     // Constants
     private const string LabelName = "NameInput";
     private const string LabelPos = "PosInput";
     private const string LabelScale = "ScaleInput";
     private const string LabelSize = "SizeInput";
     private const string LabelAnchor = "AnchorInput";
+    
+    // Data
+    private bool _useAbsolutePosition;
+    private List<Component> Components { get; } = new();
+    private RectTransform? RectTransform { get; set; }
+    private CanvasScaler? CanvasScaler { get; set; }
+    
+    // GUI
+    private readonly List<TextField> _inputs;
+    private readonly Toggle _activeToggle;
+    private readonly ListView _componentList;
 
-    public BrowserValues(Browser browser, VisualElement root, Inspector inspector)
+    public BrowserValues(VisualElement root)
     {
-        _browser = browser;
-        _inspector = inspector;
-
         TextField? nameInput = root.Q<TextField>(name: "NameInput");
         TextField? posInput = root.Q<TextField>(name: "PosInput");
         TextField? scaleInput = root.Q<TextField>(name: "ScaleInput");
@@ -66,7 +61,7 @@ public class BrowserValues
 
                         _useAbsolutePosition = !_useAbsolutePosition;
                         textField.labelElement.text =
-                            (_useAbsolutePosition ? LabelPos : LabelPos + " [A]").Replace("Input", "");
+                            (_useAbsolutePosition ? LabelPos + " [A]" : LabelPos).Replace("Input", "");
                         textField.SetValueWithoutNotify("");
                         SetValues(textField);
                     });
@@ -81,13 +76,12 @@ public class BrowserValues
         _activeToggle.AddToClassList("toggle");
         _activeToggle.RegisterValueChangedCallback(evt =>
         {
-            if (_browser.Current is null || !Browser.CanDisable(_browser.Current.name))
+            if (Browser.Current is not null && Browser.CanDisable(Browser.Current.name))
             {
-                return;
+                Browser.Current.gameObject.SetActive(evt.newValue);
             }
 
-            _browser.Current.gameObject.SetActive(evt.newValue);
-            Reflektor.FirePropertyChangedEvent(_browser.Current);
+            Refresh();
         });
         
         _componentList.itemsSource = Components;
@@ -106,12 +100,10 @@ public class BrowserValues
         _componentList.itemsChosen += enumerable =>
         {
             object? obj = enumerable.First();
-            if (obj is null)
+            if (obj is not null)
             {
-                return;
+                Inspector.SwitchTab(new SelectKey(obj));
             }
-            
-            _inspector.SwitchTab(obj);
         };
         
         // View game object on right click of component list
@@ -122,14 +114,14 @@ public class BrowserValues
                 return;
             }
 
-            if (_browser.Current is not null)
+            if (Browser.Current is not null)
             {
-                _inspector.SwitchTab(_browser.Current.gameObject);
+                Inspector.SwitchTab(new SelectKey(Browser.Current.gameObject));
             }
         });
         
         // Setup callbacks
-        _browser.CurrentChangedEvent += obj =>
+        Browser.CurrentChangedEvent += obj =>
         {
             Components.Clear();
             RectTransform = null;
@@ -165,9 +157,9 @@ public class BrowserValues
             _activeToggle.SetValueWithoutNotify(obj != null && obj.gameObject.activeSelf);
         };
         
-        Reflektor.PropertyChangedEvent += (propObj, _) =>
+        Reflektor.PropertyChangedEvent += (key, _) =>
         {
-            if (propObj is not GameObject propObjG || propObjG != _browser.Current)
+            if (key.Target is not GameObject propObjG || propObjG != Browser.Current)
             {
                 return;
             }
@@ -177,33 +169,33 @@ public class BrowserValues
                 GetChanges(textField);
             }
             
-            _activeToggle.SetValueWithoutNotify(_browser.Current.activeSelf);
+            _activeToggle.SetValueWithoutNotify(Browser.Current.activeSelf);
         };
     }
 
     private void SetValues(TextField textField)
     {
-        if (_browser.Current is null)
+        if (Browser.Current is null)
         {
             return;
         }
         
-        bool valid = Parsing.TryParse(textField.value, out Vector3 vec);
+        bool valid = TryParse(textField.value, out Vector3 vec);
         switch (textField.name)
         {
             case LabelName:
-                _browser.Current.name = textField.value;
+                Browser.Current.name = textField.value;
                 break;
             case LabelPos:
                 if (valid)
                 {
                     if (_useAbsolutePosition)
                     {
-                        _browser.Current.transform.position = vec;
+                        Browser.Current.transform.position = vec;
                     }
                     else
                     {
-                        _browser.Current.transform.localPosition = vec;
+                        Browser.Current.transform.localPosition = vec;
                     }
                 }
 
@@ -211,7 +203,7 @@ public class BrowserValues
             case LabelScale:
                 if (valid)
                 {
-                    _browser.Current.transform.localScale = vec;
+                    Browser.Current.transform.localScale = vec;
                 }
 
                 break;
@@ -235,12 +227,12 @@ public class BrowserValues
                 break;
         }
 
-        Reflektor.FirePropertyChangedEvent(_browser.Current);
+        Refresh();
     }
     
     private void GetChanges(TextField textField)
     {
-        if (_browser.Current is null)
+        if (Browser.Current is null)
         {
             textField.SetEnabled(false);
             textField.SetValueWithoutNotify("");
@@ -251,23 +243,23 @@ public class BrowserValues
         switch (textField.name)
         {
             case LabelName:
-                textField.SetValueWithoutNotify(_browser.Current.name);
+                textField.SetValueWithoutNotify(Browser.Current.name);
                 break;
             case LabelPos:
                 textField.SetValueWithoutNotify(_useAbsolutePosition
-                    ? Parsing.ToSimpleString(_browser.Current.transform.position)
-                    : Parsing.ToSimpleString(_browser.Current.transform.localPosition));
+                    ? ToSimpleString(Browser.Current.transform.position)
+                    : ToSimpleString(Browser.Current.transform.localPosition));
 
                 break;
             case LabelScale:
-                textField.SetValueWithoutNotify(Parsing.ToSimpleString(_browser.Current.transform.localScale));
+                textField.SetValueWithoutNotify(ToSimpleString(Browser.Current.transform.localScale));
                 break;
             case LabelSize:
                 if (RectTransform is not null)
                 {
                     textField.Show();
                     textField.SetValueWithoutNotify(
-                        Parsing.ToSimpleString(
+                        ToSimpleString(
                         CanvasScaler is not null
                             ? CanvasScaler.referenceResolution
                             : RectTransform.sizeDelta));
@@ -282,7 +274,7 @@ public class BrowserValues
                 if (RectTransform is not null)
                 {
                     textField.Show();
-                    textField.SetValueWithoutNotify(Parsing.ToSimpleString(RectTransform.anchoredPosition));
+                    textField.SetValueWithoutNotify(ToSimpleString(RectTransform.anchoredPosition));
                 }
                 else
                 {
@@ -307,5 +299,35 @@ public class BrowserValues
     public void Enable()
     {
         _componentList.SetEnabled(true);
+    }
+
+    private static bool TryParse(string input, out Vector3 output)
+    {
+        if (InputText<int>.TryParseVecGeneric(input, 3, 0, out Vector4 vec4))
+        {
+            output = vec4;
+            return true;
+        }
+        
+        output = Vector3.zero;
+        return true;
+    }
+
+    private static string ToSimpleString(Vector2 vec)
+    {
+        return $"{vec.x} {vec.y}";
+    }
+
+    private static string ToSimpleString(Vector3 vec)
+    {
+        return $"{vec.x} {vec.y} {vec.z}";
+    }
+
+    private void Refresh()
+    {
+        if (Browser.Current != null)
+        {
+            Reflektor.FirePropertyChangedEvent(new SelectKey(Browser.Current));
+        }
     }
 }

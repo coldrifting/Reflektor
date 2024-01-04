@@ -3,16 +3,17 @@ using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-// ReSharper disable FieldCanBeMadeReadOnly.Local
+// ReSharper disable All
 #pragma warning disable CS0414 // Field is assigned but its value is never used
 
 namespace Reflektor;
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "CollectionNeverQueried.Local")]
-public class TestClass : MonoBehaviour
+public class ZZZ_TestClass : MonoBehaviour
 {
     private Color color = new Color(1, 0, 0.5f, 0.5f);
+    private Color colorProp { get; set; } = new Color(1f, 0.5f, 0.25f, 0.5f);
     
     private EasingMode _enumBasic = EasingMode.Linear;
     public DisplayFlags EnumFlags = DisplayFlags.Methods | DisplayFlags.Properties;
@@ -32,7 +33,7 @@ public class TestClass : MonoBehaviour
     private float testFloat = -0.15f;
     private bool boolean = true;
     
-    public TestClass()
+    public ZZZ_TestClass()
     {
         intList.Add(1);
         intList.Add(0);

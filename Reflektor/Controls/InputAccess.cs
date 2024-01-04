@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
@@ -7,67 +8,162 @@ namespace Reflektor.Controls;
 
 public static class InputAccess
 {
-    public static InputBase GetInput(object source, MemberInfo info)
+    public static List<InputBase> GetInputs(SelectKey key)
     {
-        InputBase.SetSource? setSource = info.IsReadOnly() ? null : SetSource;
-        
-        return GetInput(info.GetValue(source), info.GetNameHighlighted(), info, source, GetSource, setSource);
+        List<MemberInfo> members = key.Target.GetType().GetMembersFiltered();
 
-        object? GetSource() => info.GetValue(source);
-        void SetSource(object v) => info.SetValue(source, v);
-    }
-    
-    public static InputBase GetInput(IList source, int index, bool isReadOnly = false)
-    {
-        return GetInput(source[index], index.ToString(), null, source, GetSource, isReadOnly ? null : SetSource);
-
-        object? GetSource() => source[index];
-        void SetSource(object v) => source[index] = v;
-    }
-    
-    public static InputBase GetInput(IDictionary source, object key)
-    {
-        return GetInput(source[key], key.ToString(), null, source, GetSource, SetSource);
-
-        object? GetSource() => source[key];
-        void SetSource(object v) => source[key] = v;
-    }
-
-    private static InputBase GetInput(object? value, string name, MemberInfo? info, object sourceObj, InputBase.GetSource getSource, InputBase.SetSource? setSource)
-    {
-        return value switch
+        int rowCount = 0;
+        int maxWidth = 0;
+        List<InputBase> output = new();
+        foreach (MemberInfo mb in members)
         {
-            short => new NumShort(name, info, sourceObj, getSource, setSource),
-            ushort => new NumUShort(name, info, sourceObj, getSource, setSource),
-            int => new NumInt(name, info, sourceObj, getSource, setSource),
-            uint => new NumUInt(name, info, sourceObj, getSource, setSource),
-            long => new NumLong(name, info, sourceObj, getSource, setSource),
-            ulong => new NumULong(name, info, sourceObj, getSource, setSource),
-            float => new NumFloat(name, info, sourceObj, getSource, setSource),
-            double => new NumDouble(name, info, sourceObj, getSource, setSource),
-            bool => new InputBool(name, info, sourceObj, getSource, setSource),
-            string => new InputTextString(name, info, sourceObj, getSource, setSource),
-            Transform => new InputObject(name, info, sourceObj, value, getSource), // Exclude Transforms from Collections
-            Vector2 => new InputTextVec2(name, info, sourceObj, getSource, setSource),
-            Vector3 => new InputTextVec3(name, info, sourceObj, getSource, setSource),
-            Vector4 => new InputTextVec4(name, info, sourceObj, getSource, setSource),
-            Quaternion => new InputTextQuaternion(name, info, sourceObj, getSource, setSource),
-            Color => new InputTextColor(name, info, sourceObj, getSource, setSource),
-            Enum enumVal => GetEnumType(name, enumVal, info, sourceObj, getSource, setSource),
-            IEnumerable collection => new InputCollection(name, collection, sourceObj, info, getSource, null), // TODO
-            MethodInfo methodInfo => new InputMethod(methodInfo, sourceObj, name, getSource),
-            _ => new InputObject(name, info, sourceObj, value, getSource),
-        };
+            try
+            {
+                InputBase input;
+                bool ignoreInLengthCalc = false;
+                string prefix = $"<color=#156F50>{mb.DeclaringType?.Name}</color>.";
+                string name = prefix + GetNameHighlighted(mb);
+
+                switch (mb)
+                {
+                    case PropertyInfo p:
+                        input = GetInput(key, name, p.GetValue(key.Target), p);
+                        break;
+                    case FieldInfo f:
+                        input = GetInput(key, name, f.GetValue(key.Target), f);
+                        break;
+                    case MethodInfo m:
+                        input = GetInput(key, name, m, m);
+                        if (m.GetParameters().Length != 0)
+                        {
+                            ignoreInLengthCalc = true;
+                        }
+
+                        break;
+                    default:
+                        throw new Exception("Unexpected member type encountered");
+                }
+
+                if (rowCount++ % 2 == 0)
+                {
+                    input.style.backgroundColor = new Color(0, 0, 0, 0.1f);
+                }
+
+                output.Add(input);
+
+                if (ignoreInLengthCalc)
+                {
+                    continue;
+                }
+
+                int length = name.StripColor().Length;
+                if (length > maxWidth)
+                {
+                    maxWidth = length;
+                }
+            }
+            catch (Exception e)
+            {
+                Reflektor.Log(e);
+            }
+        }
+
+        foreach (var input in output)
+        {
+            input.SetLabelWidth(maxWidth);
+        }
+
+        return output;
     }
 
-    private static InputBase GetEnumType(string name, Enum enumObj, MemberInfo? info, object sourceObj, InputBase.GetSource getSource, InputBase.SetSource? setSource)
+    public static InputBase GetInput(SelectKey key, string name, object value, MemberInfo? memberInfo = null)
+    {
+        Info info = new Info(key, name, memberInfo);
+        InputBase b = value switch
+        {
+            short => new NumShort(info),
+            ushort => new NumUShort(info),
+            int => new NumInt(info),
+            uint => new NumUInt(info),
+            long => new NumLong(info),
+            ulong => new NumULong(info),
+            float => new NumFloat(info),
+            double => new NumDouble(info),
+            bool => new InputBool(info),
+            string => new InputTextString(info),
+            Vector2 => new InputTextVec2(info),
+            Vector3 => new InputTextVec3(info),
+            Vector4 => new InputTextVec4(info),
+            Quaternion => new InputTextQuaternion(info),
+            Color => new InputTextColor(info),
+            Enum enumVal => GetEnumType(info, enumVal),
+            
+            // Exclude Transforms from Collections
+            Transform => new InputObject(info), 
+            
+            IEnumerable enumerable => new InputCollection(info, enumerable),
+            MethodInfo m => new InputMethod(info, m),
+            
+            _ => new InputObject(info),
+        };
+        
+        // Initialize outside of constructor to avoid virtual calls
+        b.PullChanges();
+        return b;
+    }
+
+    private static InputBase GetEnumType(Info info, Enum enumObj)
     {
         bool hasFlags = enumObj.GetType().IsDefined(typeof(FlagsAttribute), false);
         if (hasFlags)
         {
-            return new InputEnumFlags(name, enumObj, sourceObj, info, getSource, setSource);
+            return new InputEnumFlags(info, enumObj);
         }
 
-        return new InputEnum(name, enumObj, sourceObj, info, getSource, setSource);
+        return new InputEnum(info, enumObj);
+    }
+
+    private static string GetNameHighlighted(MemberInfo memInfo)
+    {
+        string color = memInfo switch
+        {
+            PropertyInfo => "55A38E",
+            FieldInfo => "B05DE7",
+            MethodInfo => "FF8000",
+            _ => "FFFFFF"
+        };
+        string name = memInfo switch
+        {
+            PropertyInfo propertyInfo => propertyInfo.Name,
+            FieldInfo fieldInfo => fieldInfo.Name,
+            MethodInfo methodInfo => GetMethodNameHighlighted(methodInfo),
+            _ => "[n]"
+        };
+        
+        return $"<color=#{color}>{name}</color>";
+    }
+
+    private static string GetMethodNameHighlighted(MethodBase method)
+    {
+        if (method.ReflectedType == null)
+        {
+            return "";
+        }
+        
+        string name = method.Name;
+
+        List<string> parameters = new();
+        foreach (ParameterInfo parameterInfo in method.GetParameters())
+        {
+            string parameter = parameterInfo.ParameterType.Name;
+            if (parameter.EndsWith("&"))
+            {
+                parameter = "<color=#158B2E>ref</color> " + parameter[..^1];
+            }
+
+            parameters.Add($"<color=#4389BB>{parameter}</color>");
+        }
+
+        return name + "(" + string.Join(",", parameters) + ")";
     }
 }

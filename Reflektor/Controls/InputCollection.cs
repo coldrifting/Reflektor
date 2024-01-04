@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
+using Reflektor.Windows;
 using UitkForKsp2.API;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -15,23 +15,22 @@ public sealed class InputCollection : InputBase
     private readonly Button _expandBtn = new();
     
     // Data
-    private bool expanded;
-    private readonly List<InputBase> elements = new();
+    private bool _expanded;
+    private readonly List<InputBase> _elements = new();
     
-    public InputCollection(string label, IEnumerable collection, object sourceObj, MemberInfo? info, GetSource getSource, SetSource? setSource) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public InputCollection(Info info, IEnumerable collection) : base(info)
     {
         Add(_container);
         _expandBtn.clicked += () =>
         {
-            expanded = !expanded;
+            _expanded = !_expanded;
             RefreshChildren();
         };
         _expandBtn.RegisterCallback((MouseDownEvent evt) =>
         {
             if (evt.button == 1)
             {
-                Reflektor.Inspect(collection);
+                Inspector.SwitchTab(new SelectKey(collection));
             }
         });
         _container.Add(_expandBtn);
@@ -39,10 +38,9 @@ public sealed class InputCollection : InputBase
         _containerExpanded.AddToClassList("container-expanded");
 
         Setup(collection);
-        Init();
     }
-    
-    public void Setup(IEnumerable collection)
+
+    private void Setup(IEnumerable collection)
     {
         switch (collection)
         {
@@ -52,8 +50,8 @@ public sealed class InputCollection : InputBase
                 
                 for (int i = 0; i < list.Count; i++)
                 {
-                    InputBase b = InputAccess.GetInput(list, i);
-                    elements.Add(b);
+                    InputBase b = InputAccess.GetInput(new SelectKey(list, "", i), i.ToString(), list[i]);
+                    _elements.Add(b);
                 }
 
                 break;
@@ -64,27 +62,25 @@ public sealed class InputCollection : InputBase
 
                 foreach (object key in dictionary.Keys)
                 {
-                    InputBase b = InputAccess.GetInput(dictionary, key);
-                    elements.Add(b);
+                    InputBase b = InputAccess.GetInput(new SelectKey(dictionary, "", key), key.ToString(), dictionary[key]);
+                    _elements.Add(b);
                 }
 
                 break;
             }
             default:
-                // Use temporary array?
-                var l = new List<object>();
+                int c = 0;
                 foreach (object item in collection)
                 {
-                    l.Add(item);
-                    InputBase b = InputAccess.GetInput(l, l.Count - 1, true);
-                    elements.Add(b);
+                    InputBase b = InputAccess.GetInput(new SelectKey(collection, "", c), c++.ToString(), item);
+                    _elements.Add(b);
                 }
-                _expandBtn.text = $"Expand Enumerable | Size: {l.Count}";
+                _expandBtn.text = $"Expand Enumerable | Size: {c}";
                 break;
         }
 
         bool even = false;
-        foreach (InputBase c in elements)
+        foreach (InputBase c in _elements)
         {
             c.Hide();
             c.style.backgroundColor = even
@@ -95,15 +91,11 @@ public sealed class InputCollection : InputBase
         }
     }
 
-    protected override void SetField(object? value)
-    {
-    }
-
     private void RefreshChildren()
     {
-        foreach (InputBase e in elements)
+        foreach (InputBase e in _elements)
         {
-            if (expanded)
+            if (_expanded)
             {
                 e.Show();
             }
@@ -111,6 +103,14 @@ public sealed class InputCollection : InputBase
             {
                 e.Hide();
             }
+        }
+    }
+
+    public override void PullChanges()
+    {
+        foreach (InputBase b in _elements)
+        {
+            b.PullChanges();
         }
     }
 }

@@ -1,44 +1,19 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using UitkForKsp2.API;
 using UniLinq;
 using UnityEngine;
 using UnityEngine.UIElements;
-using System.Runtime.CompilerServices;
-using Reflektor.Controls;
-using Color = UnityEngine.Color;
-using Object = UnityEngine.Object;
 
 namespace Reflektor.Windows;
 
-public class Inspector : BaseWindow
+public static class Inspector
 {
-    private record struct Tab
-    (
-        List<InputBase> data, 
-        VisualElement tab
-    );
-    
-    // GUI Elements
-    private readonly VisualElement _tabBar;
-    private readonly TextField _pathInput;
-
-    private readonly TextField _filterInput;
-
-    private readonly Toggle _autoRefreshToggle;
-    private readonly Button _refreshButton;
-    
-    private readonly ScrollView _inspectorContent;
-
     // Data
-    private readonly Dictionary<object, Tab> _tabs = new ();
-    
-    private DisplayFlags _flags = DisplayFlags.All;
-    
-    private object? _current;
-    private object? Current
+    private static readonly Dictionary<SelectKey, Tab> Tabs = new ();
+    private static DisplayFlags _flags = DisplayFlags.All;
+    private static SelectKey? _current;
+    private static SelectKey? Current
     {
         get => _current;
         set
@@ -47,27 +22,36 @@ public class Inspector : BaseWindow
             GetPathString();
         }
     }
-
-
-    public Inspector(GameObject parent) : base(parent, "InspectorWindow")
+    
+    // GUI Elements
+    private static readonly UIDocument Window;
+    
+    private static readonly VisualElement TabBar;
+    private static readonly TextField PathInput;
+    private static readonly TextField FilterInput;
+    private static readonly Toggle AutoRefreshToggle;
+    private static readonly Button RefreshButton;
+    private static readonly ScrollView InspectorContent;
+    
+    static Inspector()
     {
-        // Find GUI elements
-        _tabBar = Window.rootVisualElement.Q<VisualElement>(name: "TabBar");
-        _pathInput = Window.rootVisualElement.Q<TextField>(name: "PathInput");
+        Window = Utils.GetNewWindow("InspectorWindow");
         
-        _filterInput = Window.rootVisualElement.Q<TextField>(name: "FilterInput");
+        // Find GUI elements
+        TabBar = Window.rootVisualElement.Q<VisualElement>(name: "TabBar");
+        PathInput = Window.rootVisualElement.Q<TextField>(name: "PathInput");
+        FilterInput = Window.rootVisualElement.Q<TextField>(name: "FilterInput");
         
         Toggle propertyToggle = Window.rootVisualElement.Q<Toggle>(name: "PropertyToggle");
         Toggle fieldToggle = Window.rootVisualElement.Q<Toggle>(name: "FieldToggle");
         Toggle methodToggle = Window.rootVisualElement.Q<Toggle>(name: "MethodToggle");
         
-        _autoRefreshToggle = Window.rootVisualElement.Q<Toggle>(name: "AutoRefreshToggle");
-        _refreshButton = Window.rootVisualElement.Q<Button>(name: "RefreshButton");
-
-        _inspectorContent = Window.rootVisualElement.Q<ScrollView>(name: "InspectorContent");
+        AutoRefreshToggle = Window.rootVisualElement.Q<Toggle>(name: "AutoRefreshToggle");
+        RefreshButton = Window.rootVisualElement.Q<Button>(name: "RefreshButton");
+        InspectorContent = Window.rootVisualElement.Q<ScrollView>(name: "InspectorContent");
 
         // Add callbacks
-        _pathInput.RegisterValueChangedCallback(evt =>
+        PathInput.RegisterValueChangedCallback(evt =>
         {
             string[] fullPath = evt.newValue.Split("|", 2);
             GameObject? candidate = GameObject.Find(fullPath.First());
@@ -75,19 +59,19 @@ public class Inspector : BaseWindow
             {
                 string compTargetType = fullPath.Last().Trim();
                 Component? comp = candidate.GetComponentByType(compTargetType);
-                SwitchTab(comp != null ? comp : candidate);
+                SwitchTab(comp != null ? new SelectKey(comp) : new SelectKey(candidate));
             }
 
             GetPathString();
         });
 
-        _filterInput.RegisterValueChangedCallback(_ => Refresh());
+        FilterInput.RegisterValueChangedCallback(_ => Refresh());
 
         propertyToggle.RegisterValueChangedCallback(evt => ToggleFlag(DisplayFlags.Properties, evt.newValue));
         fieldToggle.RegisterValueChangedCallback(evt => ToggleFlag(DisplayFlags.Fields, evt.newValue));
         methodToggle.RegisterValueChangedCallback(evt => ToggleFlag(DisplayFlags.Methods, evt.newValue));
 
-        _autoRefreshToggle.RegisterValueChangedCallback(evt =>
+        AutoRefreshToggle.RegisterValueChangedCallback(evt =>
         {
             if (evt.newValue)
             {
@@ -98,7 +82,7 @@ public class Inspector : BaseWindow
             }
         });
             
-        _refreshButton.clicked += () =>
+        RefreshButton.clicked += () =>
         {
             if (Current != null)
             {
@@ -107,104 +91,84 @@ public class Inspector : BaseWindow
         };
         
         // Remove placeholder elements
-        _tabBar.Clear();
-        _inspectorContent.Clear();
+        TabBar.Clear();
+        InspectorContent.Clear();
         
         Window.Hide();
         
         // Add Default Tabs
-        SwitchTab(GameObject.Find("/GameManager"));
+        SwitchTab(new SelectKey(GameObject.Find("/GameManager")));
 
         GameObject g = new GameObject("[Testing]");
         Object.DontDestroyOnLoad(g);
-        TestClass t = g.AddComponent<TestClass>();
+        ZZZ_TestClass t = g.AddComponent<ZZZ_TestClass>();
         if (t is not null)
         {
-            SwitchTab(t);
+            SwitchTab(new SelectKey(t));
         }
     }
 
-    private IEnumerator RefreshAutoCycle() {
-        while(_autoRefreshToggle.value) {
-            yield return new WaitForSeconds(1f);
-            
-            if (Current != null)
-            {
-                Reflektor.FirePropertyChangedEvent(Current);
-            }
-        }
-    }
-
-    private void ToggleFlag(DisplayFlags flag, bool shouldSet)
+    private static void ToggleFlag(DisplayFlags flag, bool shouldSet)
     {
         _flags = shouldSet ? _flags | flag : _flags & ~flag;
         Refresh();
     }
 
-    private void AddTab(object obj)
+    private static void AddTab(SelectKey key)
     {
-        if (_tabs.ContainsKey(obj))
+        if (Tabs.ContainsKey(key))
+        {
+            return;
+        }
+
+        Tab t = new(key);
+        t.AddTab(TabBar, InspectorContent);
+        Tabs.Add(key, t);
+    }
+
+    public static void SwitchTab(SelectKey key)
+    {
+        if (Current is not null && Tabs.TryGetValue(Current, out Tab prevTab))
+        {
+            prevTab.UnfocusTab();
+        }
+        
+        Current = key;
+        
+        Window.Show();
+        
+        AddTab(key);
+        Refresh();
+
+        if (Tabs.TryGetValue(Current, out Tab currentTab))
+        {
+            currentTab.FocusTab();
+        }
+        
+        InspectorContent.scrollOffset = Vector2.zero;
+    }
+
+    public static void CloseTab(SelectKey key)
+    {
+        if (!Tabs.TryGetValue(key, out Tab closeTab))
         {
             return;
         }
         
-        // Create data
-        var elements = GetElements(obj);
-        
-        Label b = new(obj.GetTabName());
-        Button close = new(() => CloseTab(obj));
-        close.text = "\u2717"; // Close Icon
-
-        VisualElement tab = new();
-        tab.RegisterCallback((MouseDownEvent _) => SwitchTab(obj));
-        tab.Add(b);
-        tab.Add(close);
-        
-        // Add to GUI
-        _tabBar.Add(tab);
-        _inspectorContent.AddRange(elements);
-
-        // Add to data
-        _tabs[obj] = new Tab(elements, tab);
-    }
-
-    public void SwitchTab(object obj)
-    {
-        if (Current is not null)
-        {
-            _tabs[Current].tab.RemoveFromClassList("focused");
-        }
-        
-        Current = obj;
-        
-        Window.Show();
-        AddTab(obj);
-        Refresh();
-
-        _tabs[Current].tab.AddToClassList("focused");
-        _inspectorContent.scrollOffset = Vector2.zero;
-    }
-
-    private void CloseTab(object obj)
-    {
-        if (obj == Current)
+        if (Equals(key, Current))
         {
             Current = null;
         }
         
-        // Remove from GUI
-        _tabBar.Remove(_tabs[obj].tab);
-        _inspectorContent.RemoveRange(_tabs[obj].data);
-
-        // Remove data
-        _tabs.Remove(obj);
+        closeTab.RemoveTab(TabBar, InspectorContent);
+        Tabs.Remove(key);
         
         // Switch tab
-        if (_tabs.Count > 0)
+        if (Tabs.Count > 0)
         {
             if (Current == null)
             {
-                SwitchTab(_tabs.Keys.First());
+                SwitchTab(Tabs.Keys.First());
             }
         }
         else
@@ -213,114 +177,56 @@ public class Inspector : BaseWindow
         }
     }
 
-    private void Refresh()
+    private static void Refresh()
     {
         if (Current is null)
         {
             return;
         }
 
-        foreach (Tab tab in _tabs.Values)
+        foreach (Tab t in Tabs.Values)
         {
-            foreach (InputBase input in tab.data)
-            {
-                input.Filter(Current, _flags, _filterInput.value);
-            }
+            t.Refresh(Current, _flags, FilterInput.text);
         }
     }
 
-    private static List<InputBase> GetElements(object obj)
+    private static void GetPathString()
     {
-        List<InputBase> inputs = new();
-
-        const BindingFlags bindingFlags = BindingFlags.Static | 
-                                          BindingFlags.Instance | 
-                                          BindingFlags.Public | 
-                                          BindingFlags.NonPublic;
-        
-        List<MemberInfo> members = new();
-        members.AddRange(obj.GetType().GetAllProperties().Where(IgnoreCompilerAttributes).Where(p => p.GetIndexParameters().Length == 0));
-        members.AddRange(obj.GetType().GetAllFields().Where(IgnoreCompilerAttributes));
-        members.AddRange(obj.GetType().GetMethods(bindingFlags).Where(IgnoreCompilerAttributes).Where(m => !m.IsSpecialName));
-        
-        int lineCounter = 0;
-        foreach (MemberInfo memberInfo in members)
+        if (Current != null)
         {
-            try
+            string path = Current.Target switch
             {
-                InputBase element = InputAccess.GetInput(obj, memberInfo);
-                
-                element.style.backgroundColor = lineCounter++ % 2 == 0
-                    ? new Color(0, 0, 0, 0.1f)
-                    : new Color(0, 0, 0, 0);
-
-                inputs.Add(element);
-            }
-            catch (Exception)
-            {
-                Reflektor.Log($"Could not add the element {memberInfo.Name}");
-            }
+                null => "null",
+                Component c => $"{c.gameObject.GetPath()}|{c.GetType().Name}",
+                GameObject g => g.GetPath(),
+                _ => Current.Target.ToString(),
+            };
+            PathInput.SetValueWithoutNotify(path);
         }
-
-        int maxWidth = 0;
-        foreach (InputBase input in inputs)
-        {
-            if (input is InputMethod { HasParameters: true })
-            {
-                continue;
-            }
-            if (input.LabelLength > maxWidth)
-            {
-                maxWidth = input.LabelLength;
-            }
-        }
-
-        foreach (InputBase input in inputs)
-        {
-            if (input is not InputMethod { HasParameters: true })
-            {
-                input.SetLabelWidth(maxWidth);
-            }
-        }
-
-        inputs.Sort();
-
-        foreach (InputBase b in inputs)
-        {
-            Reflektor.Log($"{b.Prefix}.{b.Name}");
-        }
-        
-        return inputs;
     }
 
-    private static bool IgnoreCompilerAttributes(MemberInfo m)
+    public static void ToggleDisplay()
     {
-        return m.GetCustomAttribute<CompilerGeneratedAttribute>() == null;
-    }
-
-    private void GetPathString()
-    {
-        string path = Current switch
-        {
-            null => "null",
-            Component c => $"{c.gameObject.GetPath()}|{c.GetType().Name}",
-            GameObject g => g.GetPath(),
-            _ => Current.ToString(),
-        };
-        _pathInput.SetValueWithoutNotify(path);
-    }
-
-    public void ToggleDisplay()
-    {
-        if (Window.IsVisible())
+        if (Window.rootVisualElement.style.display == DisplayStyle.Flex)
         {
             Window.Hide();
         }
         else
         {
-            if (_tabs.Count > 0)
+            if (Tabs.Count > 0)
             {
                 Window.Show();
+            }
+        }
+    }
+
+    private static IEnumerator RefreshAutoCycle() {
+        while(AutoRefreshToggle.value) {
+            yield return new WaitForSeconds(1f);
+            
+            if (Current != null)
+            {
+                Reflektor.FirePropertyChangedEvent(Current);
             }
         }
     }

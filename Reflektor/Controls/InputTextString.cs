@@ -1,11 +1,8 @@
-﻿using System.Reflection;
-
-namespace Reflektor.Controls;
+﻿namespace Reflektor.Controls;
 
 public class InputTextString : InputText<string>
 {
-    public InputTextString(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public InputTextString(Info info) : base (info)
     {
     }
 

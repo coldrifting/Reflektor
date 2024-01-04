@@ -1,12 +1,10 @@
 ﻿using System.Globalization;
-using System.Reflection;
 
 namespace Reflektor.Controls;
 
 public class NumShort : InputText<short>
 {
-    public NumShort(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public NumShort(Info info) : base (info)
     {
     }
 
@@ -30,8 +28,7 @@ public class NumShort : InputText<short>
 
 public class NumUShort : InputText<ushort>
 {
-    public NumUShort(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public NumUShort(Info info) : base (info)
     {
     }
 
@@ -55,8 +52,7 @@ public class NumUShort : InputText<ushort>
 
 public class NumInt : InputText<int>
 {
-    public NumInt(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public NumInt(Info info) : base (info)
     {
     }
 
@@ -80,8 +76,7 @@ public class NumInt : InputText<int>
 
 public class NumUInt : InputText<uint>
 {
-    public NumUInt(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public NumUInt(Info info) : base (info)
     {
     }
 
@@ -105,8 +100,7 @@ public class NumUInt : InputText<uint>
 
 public class NumLong : InputText<long>
 {
-    public NumLong(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public NumLong(Info info) : base (info)
     {
     }
 
@@ -130,8 +124,7 @@ public class NumLong : InputText<long>
 
 public class NumULong : InputText<ulong>
 {
-    public NumULong(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public NumULong(Info info) : base (info)
     {
     }
 
@@ -155,8 +148,7 @@ public class NumULong : InputText<ulong>
 
 public class NumFloat : InputText<float>
 {
-    public NumFloat(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public NumFloat(Info info) : base (info)
     {
     }
 
@@ -180,8 +172,7 @@ public class NumFloat : InputText<float>
 
 public class NumDouble : InputText<double>
 {
-    public NumDouble(string label, MemberInfo? info, object sourceObj, GetSource getSource, SetSource? setSource = null) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public NumDouble(Info info) : base (info)
     {
     }
 

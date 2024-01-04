@@ -20,16 +20,16 @@ public class Reflektor : BaseSpaceWarpPlugin
 {
     [PublicAPI] public const string ModGuid = "Reflektor";
     [PublicAPI] public const string ModName = "Reflektor";
-    [PublicAPI] public const string ModVer = "0.1.0.0";
-
+    [PublicAPI] public const string ModVer = "0.2.0.0";
+    
+    // Instance stuff
     public static Reflektor? Instance;
 
+    private const string RootName = "_InspectorRoot";
+    public static GameObject Root => GameObject.Find(RootName) ?? new GameObject(RootName);
+
     // Events
-    public static event Action<object, bool>? PropertyChangedEvent;
-    
-    // Windows
-    private Inspector? _inspector;
-    private Browser? _browser;
+    public static event Action<SelectKey, bool>? PropertyChangedEvent;
 
     // Config
     private ConfigEntry<KeyCode>? _showHideToggleShortcutBrowser;
@@ -48,9 +48,6 @@ public class Reflektor : BaseSpaceWarpPlugin
 
         GameObject rootGameObject = new GameObject("_InspectorRoot");
         DontDestroyOnLoad(rootGameObject);
-
-        _inspector = new Inspector(rootGameObject);
-        _browser = new Browser(rootGameObject, _inspector);
         
         SpaceWarp.API.Game.Messages.StateChanges.GameStateChanged += (_, _, _) => Utils.ResetSorting();
         SpaceWarp.API.Game.Messages.StateChanges.GameStateChanged += (_, _, _) => RefreshBrowser();
@@ -78,7 +75,7 @@ public class Reflektor : BaseSpaceWarpPlugin
         Log("Initialized");
     }
 
-    private void RefreshBrowser()
+    private static void RefreshBrowser()
     {
         if (Instance == null)
         {
@@ -89,25 +86,25 @@ public class Reflektor : BaseSpaceWarpPlugin
         Instance.StartCoroutine(coroutine);
     }
 
-    private IEnumerator RefreshBrowserAfterWait(int numFrames)
+    private static IEnumerator RefreshBrowserAfterWait(int numFrames)
     {
         for (int i = 0; i < numFrames; i++)
         {
             yield return 0;
         }
-        _browser?.Refresh();
+        Browser.Refresh();
     }
 
     public void Update()
     {
         if (_showHideToggleKeyBrowser != null && _showHideToggleKeyBrowser.Value.IsDown())
         {
-            _browser?.ToggleDisplay();
+            Browser.ToggleDisplay();
         }
         
         if (_showHideToggleKeyInspector != null && _showHideToggleKeyInspector.Value.IsDown())
         {
-            _inspector?.ToggleDisplay();
+            Inspector.ToggleDisplay();
         }
 
         if (_raycastShortcutKey != null && _raycastShortcutKey.Value.IsDown())
@@ -125,35 +122,35 @@ public class Reflektor : BaseSpaceWarpPlugin
 
         var objects = raycastResults.Select(result => result.gameObject).ToList();
 
-        _browser?.ShowRaycastResults(objects);
+        Browser.ShowRaycastResults(objects);
     }
 
-    public static void FirePropertyChangedEvent(object obj, bool triggeredManually = false)
+    public static void FirePropertyChangedEvent(SelectKey key, bool triggeredManually = false)
     {
         if (Instance is null)
         {
             return;
         }
 
-        Instance.StartCoroutine(FireEventAfterWait((o, b) =>
+        Instance.StartCoroutine(FireEventAfterWait((selectKey, b) =>
         {
-            GameObject? g = o.GetGameObject();
+            GameObject? g = selectKey.Target.GetGameObject();
             if (g is not null)
             {
-                PropertyChangedEvent?.Invoke(g, b);
+                PropertyChangedEvent?.Invoke(new SelectKey(g), b);
                 foreach (Component c in g.GetComponents<Component>())
                 {
-                    PropertyChangedEvent?.Invoke(c, b);
+                    PropertyChangedEvent?.Invoke(new SelectKey(c), b);
                 }
             }
             else
             {
-                PropertyChangedEvent?.Invoke(o, b);
+                PropertyChangedEvent?.Invoke(selectKey, b);
             }
-        }, obj, triggeredManually, 3));
+        }, key, triggeredManually, 3));
     }
 
-    private static IEnumerator FireEventAfterWait(Action<object, bool> eventAction, object obj, bool b, int numFrames)
+    private static IEnumerator FireEventAfterWait(Action<SelectKey, bool> eventAction, SelectKey obj, bool b, int numFrames)
     {
         for (int i = 0; i < numFrames; i++)
         {
@@ -163,11 +160,11 @@ public class Reflektor : BaseSpaceWarpPlugin
         eventAction.Invoke(obj, b);
     }
 
-    public static void Inspect(object? obj)
+    public static void Inspect(SelectKey key)
     {
-        if (Instance is not null && obj is not null)
+        if (Instance is not null)
         {
-            Instance._inspector?.SwitchTab(obj);
+            Inspector.SwitchTab(key);
         }
     }
 
@@ -208,19 +205,5 @@ public class Reflektor : BaseSpaceWarpPlugin
         StringBuilder sb = new();
         string list = sb.AppendJoin(", ", msg).ToString();
         Debug.Log($"<color=#00FF77>{ModName}: {list}</color>");
-    }
-
-    public static Color ColorFromHex(uint hexNum)
-    {
-        if (hexNum > 0xFFFFFF)
-        {
-            return Color.white;
-        }
-        
-        uint b = hexNum & 0xff;
-        uint g = (hexNum>>8) & 0xff;
-        uint r = (hexNum>>16) & 0xff;
-
-        return new Color(r / 255.0f, g / 255.0f, b / 255.0f);
     }
 }

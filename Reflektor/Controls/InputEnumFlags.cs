@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UitkForKsp2.API;
 using UnityEngine.UIElements;
 
@@ -20,16 +19,14 @@ public class InputEnumFlags : InputBase
     
     private bool _expand;
 
-    public InputEnumFlags(string label, Enum enumObj, object sourceObj, MemberInfo? info, GetSource getSource, SetSource? setSource) 
-        : base(label, info, sourceObj, getSource, setSource)
+    public InputEnumFlags(Info info, Enum enumObj) : base(info)
     {        
         _enumType = enumObj.GetType();
         
         BuildEnum();
-        Init();
     }
 
-    public void BuildEnum()
+    private void BuildEnum()
     {
         Add(_container);
         _expandBtn.clicked += () =>
@@ -54,7 +51,7 @@ public class InputEnumFlags : InputBase
                 string eName = e.ToString();
                 Toggle t = new(eName);
                 t.AddToClassList("toggle");
-                t.SetEnabled(_setSource is not null);
+                t.SetEnabled(Setter is not null);
                 _flagToggles.Add(e, t);
                     
                 _containerExpanded.Add(t);
@@ -62,16 +59,16 @@ public class InputEnumFlags : InputBase
         }
 
         _applyBtn.text = "Apply";
-        _applyBtn.SetEnabled(_setSource is not null);
-        _applyBtn.clicked += UpdateSource;
+        _applyBtn.SetEnabled(Setter is not null);
+        _applyBtn.clicked += PushChanges;
         _containerExpanded.Add(_applyBtn);
         _containerExpanded.Hide();
         _initialized = true;
     }
 
-    protected override void SetField(object? value)
+    public override void PullChanges()
     {
-        if (value is Enum valEnum)
+        if (Getter.Invoke() is Enum valEnum)
         {
             if (!_initialized)
             {
@@ -89,8 +86,8 @@ public class InputEnumFlags : InputBase
             _expandBtn.text = valEnum.ToString();
         }
     }
-    
-    private void UpdateSource()
+
+    private void PushChanges()
     {
         Enum resultEnum = Reset();
         foreach ((Enum flag, Toggle toggle) in _flagToggles)
@@ -101,7 +98,7 @@ public class InputEnumFlags : InputBase
             }
         }
 
-        _setSource?.Invoke(resultEnum);
+        Setter?.Invoke(resultEnum);
         Refresh();
     }
 
