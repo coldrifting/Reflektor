@@ -150,7 +150,7 @@ public class SelectKey
             return true;
         }
         
-        if (Root is IEnumerable and (not IList or IDictionary))
+        if (Root is IEnumerable and (not IList or IDictionary) && _index is not null)
         {
             return false;
         }
