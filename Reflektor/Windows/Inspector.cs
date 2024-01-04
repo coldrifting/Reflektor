@@ -95,17 +95,6 @@ public static class Inspector
         InspectorContent.Clear();
         
         Window.Hide();
-        
-        // Add Default Tabs
-        SwitchTab(new SelectKey(GameObject.Find("/GameManager")));
-
-        GameObject g = new GameObject("[Testing]");
-        Object.DontDestroyOnLoad(g);
-        ZZZ_TestClass t = g.AddComponent<ZZZ_TestClass>();
-        if (t is not null)
-        {
-            SwitchTab(new SelectKey(t));
-        }
     }
 
     private static void ToggleFlag(DisplayFlags flag, bool shouldSet)

@@ -12,6 +12,8 @@ namespace Reflektor;
 [SuppressMessage("ReSharper", "CollectionNeverQueried.Local")]
 public class ZZZ_TestClass : MonoBehaviour
 {
+    private Vector3 avec = new Vector3(1, 2, 3);
+    
     private Color color = new Color(1, 0, 0.5f, 0.5f);
     private Color colorProp { get; set; } = new Color(1f, 0.5f, 0.25f, 0.5f);
     

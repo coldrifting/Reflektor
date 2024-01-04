@@ -73,6 +73,19 @@ public class Reflektor : BaseSpaceWarpPlugin
         SetKeyboardShortcuts();
         
         Log("Initialized");
+        
+        // Add Default Tabs
+        #if DEBUG
+        Inspector.SwitchTab(new SelectKey(GameObject.Find("/GameManager")));
+
+        GameObject g = new GameObject("[Testing]");
+        DontDestroyOnLoad(g);
+        ZZZ_TestClass t = g.AddComponent<ZZZ_TestClass>();
+        if (t is not null)
+        {
+            Inspector.SwitchTab(new SelectKey(t));
+        }
+        #endif
     }
 
     private static void RefreshBrowser()
