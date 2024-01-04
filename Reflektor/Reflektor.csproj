@@ -27,18 +27,23 @@
 
     <ItemGroup>
       <Folder Include="_Resources\assets\bundles\" />
+      <_CopyItems Include="$(ProjectDir)/_Resources/**/*.*" />
     </ItemGroup>
-
     
     <Target Name="CopyToKSP2Dir" AfterTargets="AfterBuild">
-        <ItemGroup>
-            <_CopyItems Include="$(ProjectDir)/_Resources/**/*.*" />
-        </ItemGroup>
         
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(KSP2DIR)/BepInEx/plugins/$(ProjectName)" />
         <Copy
                 SourceFiles="@(_CopyItems)"
                 DestinationFolder="$(KSP2DIR)/BepInEx/plugins/$(ProjectName)/%(RecursiveDir)"
+        />
+    </Target>
+    
+    <Target Name="CreateRelease" AfterTargets="AfterBuild"  Condition="'$(Configuration)'=='Release'">
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(USERPROFILE)/Desktop/BepInEx/plugins/$(ProjectName)" />
+        <Copy
+                SourceFiles="@(_CopyItems)"
+                DestinationFolder="$(USERPROFILE)/Desktop/BepInEx/plugins/$(ProjectName)/%(RecursiveDir)"
         />
     </Target>
 
