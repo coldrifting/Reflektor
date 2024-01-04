@@ -8,7 +8,7 @@ All jokes aside, a quicker, lighter weight alternative to Unity Explorer for KSP
   
 NEW: 
 - Edit Fields/Properties of objects and invoke parameterless methods in the inspector (Shift + Alt + E by default).
-- The new and improved editor spports editing of strings, numbers, booleans, enums (including multi-flag support), colors, vectors, etc, 
+- The new and improved editor supports editing of strings, numbers, booleans, enums (including multi-flag support), colors, vectors, etc, 
 even inside of lists and dictionaries.
 
 ![Reflektor2](https://github.com/coldrifting/Reflektor/assets/31460040/3b1cc2ec-1d7f-4360-9c0a-710d4e6b323e)
