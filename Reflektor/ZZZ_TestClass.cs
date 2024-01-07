@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿#if DEBUG
+
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -75,3 +77,5 @@ public class ZZZ_TestClass : MonoBehaviour
         Debug.Log("Nothing to see here...");
     }
 }
+
+#endif
