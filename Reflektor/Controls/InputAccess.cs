@@ -104,6 +104,9 @@ public static class InputAccess
             IEnumerable enumerable => new InputCollection(info, enumerable),
             MethodInfo m => new InputMethod(info, m),
             
+            Sprite => new InputObjectTexture(info),
+            Texture2D => new InputObjectTexture(info),
+            
             _ => new InputObject(info),
         };
         

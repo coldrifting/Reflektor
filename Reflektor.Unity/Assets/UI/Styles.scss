@@ -388,6 +388,19 @@ ListView {
 		> VisualElement > VisualElement > Toggle {
 			width: 100%;
 		}
+		.image-save-controls {
+			flex-direction: row;
+			> TextField {
+				flex-grow: 1;
+				flex-shrink: 1;
+			}
+		}
+		.image-preview {
+			margin: 10px 0px;
+			width: 100%;
+			height: 200px;
+			-unity-background-scale-mode: scale-to-fit;
+		}
 		Toggle {
 			padding: 0px;
 			> .unity-toggle__input {

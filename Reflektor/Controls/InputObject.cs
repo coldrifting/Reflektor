@@ -5,13 +5,13 @@ namespace Reflektor.Controls;
 
 public class InputObject : InputBase
 {
-    private readonly Button _inspectBtn = new();
-    private readonly Label _inspectLabel = new();
+    protected readonly Button InspectBtn = new();
+    protected readonly Label InspectLabel = new();
     
     public InputObject(Info info) : base (info)
     {
-        Add(_inspectBtn);
-        Add(_inspectLabel);
+        Add(InspectBtn);
+        Add(InspectLabel);
     }
 
     public override void PullChanges()
@@ -20,14 +20,16 @@ public class InputObject : InputBase
 
         if (inspect == null)
         {
-            _inspectBtn.text = "null";
+            InspectBtn.text = "null";
             return;
         }
+        
+        InspectLabel.text = inspect.GetType().ToString();
 
-        _inspectBtn.text = !IsInsideCollection && inspect == Key.Target ? "this" : GetName(inspect);
+        InspectBtn.text = !IsInsideCollection && inspect == Key.Target ? "this" : GetName(inspect);
 
-        _inspectBtn.clickable = null;
-        _inspectBtn.clicked += () =>
+        InspectBtn.clickable = null;
+        InspectBtn.clicked += () =>
         {
             SelectKey v = Key.GetSubKey(Name);
             Reflektor.Inspect(v);
