@@ -43,7 +43,7 @@ public class BrowserObjects
         _sceneChangeDropdown.SetValueWithoutNotify(_sceneChangeDropdown.choices.Last());
         
         _upBtn.clicked += Browser.Up;
-        _refreshBtn.clicked += UpdateObjects;
+        _refreshBtn.clicked += () => UpdateObjects(Browser.Current);
         
         _objectList.itemsSource = _objects;
         _objectList.makeItem = () => new Label();
@@ -83,11 +83,6 @@ public class BrowserObjects
         Browser.CurrentChangedEvent += UpdateObjects;
     }
 
-    private void UpdateObjects()
-    {
-        UpdateObjects(Browser.Current);
-    }
-
     private void UpdateObjects(GameObject? obj)
     {
         _curObjLabel.text = obj != null ? obj.name : "[Scene Root]";
@@ -101,6 +96,11 @@ public class BrowserObjects
         _objectList.Rebuild();
         _objectList.RefreshItems();
         _objectList.SetEmptyText("(No Child Transforms)", "#777777");
+
+        if (obj is not null)
+        {
+            Reflektor.FirePropertyChangedEvent(new SelectKey(obj), true);
+        }
     }
 
     private void GetScenes()
