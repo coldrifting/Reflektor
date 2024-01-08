@@ -1,5 +1,4 @@
 using Reflektor.Controls;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Reflektor.Windows;
