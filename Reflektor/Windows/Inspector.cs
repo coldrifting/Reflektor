@@ -1,7 +1,5 @@
 using System.Collections;
-using System.Collections.Generic;
 using UitkForKsp2.API;
-using UniLinq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,7 +8,7 @@ namespace Reflektor.Windows;
 public static class Inspector
 {
     // Data
-    private static readonly Dictionary<SelectKey, Tab> Tabs = new ();
+    private static readonly Dictionary<SelectKey, Tab> Tabs = new();
     private static DisplayFlags _flags = DisplayFlags.All;
     private static SelectKey? _current;
     private static SelectKey? Current

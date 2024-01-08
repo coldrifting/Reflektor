@@ -1,50 +1,81 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
-        <ImplicitUsings>disable</ImplicitUsings>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>10</LangVersion>
         <NoWarn>$(NoWarn);CS0436</NoWarn>
-        <Version>0.2.1.0</Version>
-        <AssemblyVersion>0.2.1.0</AssemblyVersion>
-        <FileVersion>0.2.1.0</FileVersion>
-        <TargetFramework>netstandard2.1</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.1">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-      <PackageReference Include="BepInEx.BaseLib" Version="5.4.21" />
-      <PackageReference Include="HarmonyX" Version="2.10.2" />
-      <PackageReference Include="KerbalSpaceProgram2.GameLibs" Version="0.2.0" />
-      <PackageReference Include="SpaceWarp" Version="1.7.0" />
-      <PackageReference Include="UitkForKsp2" Version="2.4.0" />
-      <PackageReference Include="UitkForKsp2.Controls" Version="2.1.0" />
-      <PackageReference Include="UnityEngine.Modules" Version="2022.3.5" />
+        <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="BepInEx.Core" Version="5.4.21" />
+        <PackageReference Include="BepInEx.BaseLib" Version="5.4.21" />
+        <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
+        <PackageReference Include="KerbalSpaceProgram2.GameLibs" Version="0.2.0" Publicize="true"/>
+        <PackageReference Include="SpaceWarp" Version="1.7.0" />
+        <PackageReference Include="UitkForKsp2" Version="2.4.0" />
+        <PackageReference Include="UnityEngine.Modules" Version="2022.3.5" />
+        <PackageReference Include="HarmonyX" Version="2.10.2" />
     </ItemGroup>
+
+    <!-- Set assembly values from swinfo -->
+    <PropertyGroup Label="Package source configuration">
+        <RestoreAdditionalProjectSources>
+            https://nuget.spacewarp.org/v3/index.json
+        </RestoreAdditionalProjectSources>
+    </PropertyGroup>
+
+    <ItemGroup Label="Dependencies for build targets">
+        <PackageReference Include="JsonPeek" Version="1.2.0" PrivateAssets="all"/>
+    </ItemGroup>
+
+    <Target Label="Reading properties from swinfo.json" Name="ReadPropertiesFromJson" BeforeTargets="PreBuildEvent;AddGeneratedFile">
+        <JsonPeek ContentPath="$(ProjectDir)/_Resources/swinfo.json" Query="$">
+            <Output TaskParameter="Result" ItemName="Swinfo"/>
+        </JsonPeek>
+
+        <!-- Extract properties from the JSON -->
+        <PropertyGroup>
+            <ModId>@(Swinfo -> '%(mod_id)')</ModId>
+            <Version>@(Swinfo -> '%(version)')</Version>
+            <Version Condition="$(Version.Contains('-'))">$(Version.Substring(0, $(Version.IndexOf('-'))))</Version>
+            <Product>@(Swinfo -> '%(name)')</Product>
+            <Authors>@(Swinfo -> '%(author)')</Authors>
+            <Description>@(Swinfo -> '%(description)')</Description>
+            <RepositoryType>git</RepositoryType>
+            <RepositoryUrl>@(Swinfo -> '%(source)')</RepositoryUrl>
+            <SpaceWarpPluginGuid>$(ModId)</SpaceWarpPluginGuid>
+            <SpaceWarpPluginName>$(Product)</SpaceWarpPluginName>
+            <SpaceWarpPluginVersion>$(Version)</SpaceWarpPluginVersion>
+        </PropertyGroup>
+    </Target>
+
+    <!-- Copy things to the right folders -->
+    <PropertyGroup Label="Game folder configuration">
+        <KSP2DIR Condition="'$(KSP2DIR)' == ''">C:/Steam/steamapps/common/Kerbal Space Program 2</KSP2DIR>
+    </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="_Resources\assets\bundles\" />
-      <_CopyItems Include="$(ProjectDir)/_Resources/**/*.*" />
+        <Folder Include="_Resources" />
+        <_CopyItems Include="$(ProjectDir)/_Resources/**/*.*" />
     </ItemGroup>
-    
+
     <Target Name="CopyToKSP2Dir" AfterTargets="AfterBuild">
-        
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(KSP2DIR)/BepInEx/plugins/$(ProjectName)" />
-        <Copy
-                SourceFiles="@(_CopyItems)"
-                DestinationFolder="$(KSP2DIR)/BepInEx/plugins/$(ProjectName)/%(RecursiveDir)"
-        />
-    </Target>
-    
-    <Target Name="CreateRelease" AfterTargets="AfterBuild"  Condition="'$(Configuration)'=='Release'">
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(USERPROFILE)/Desktop/BepInEx/plugins/$(ProjectName)" />
-        <Copy
-                SourceFiles="@(_CopyItems)"
-                DestinationFolder="$(USERPROFILE)/Desktop/BepInEx/plugins/$(ProjectName)/%(RecursiveDir)"
-        />
+        <Copy SourceFiles="@(_CopyItems)" DestinationFolder="$(KSP2DIR)/BepInEx/plugins/$(ProjectName)/%(RecursiveDir)" />
     </Target>
 
+    <Target Name="CreateRelease" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Release'">
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(TEMP)/$(ProjectName)/BepInEx/plugins/$(ProjectName)" />
+        <Copy SourceFiles="@(_CopyItems)" DestinationFolder="$(TEMP)/$(ProjectName)/BepInEx/plugins/$(ProjectName)/%(RecursiveDir)" />
+        <ZipDirectory
+                Overwrite="true"
+                SourceDirectory="$(TEMP)/$(ProjectName)"
+                DestinationFile="$(USERPROFILE)/Desktop/$(ProjectName)-v$(Version).zip" />
+        <RemoveDir Directories="$(TEMP)/$(ProjectName)"/>
+    </Target>
 </Project>

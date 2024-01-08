@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Reflektor.Controls;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -65,7 +64,7 @@ public class Tab
         string objType = obj.GetType().Name;
         return obj switch
         {
-            Object o => @$"{objType}\r\n<color=#FFBB00>{o.name}</color>",
+            UnityEngine.Object o => @$"{objType}\r\n<color=#FFBB00>{o.name}</color>",
             _ => $"{objType}\r\n"
         };
     }
