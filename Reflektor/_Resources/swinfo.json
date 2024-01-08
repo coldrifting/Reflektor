@@ -5,7 +5,7 @@
   "author": "Coldrifting",
   "description": "A quicker alternative than Unity Explorer for browsing GameObjects",
   "source": "https://github.com/coldrifting/Reflektor",
-  "version": "0.2.1.1",
+  "version": "0.2.1.2",
   "ksp2_version": {
     "min": "0.2.0",
     "max": "*"
